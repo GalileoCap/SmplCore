@@ -16,6 +16,24 @@ pub enum Register {
     Rb0, Rb1,
 }
 
+impl Register {
+    pub fn as_src(&self) -> u8 {
+        use Register::*;
+        match self {
+            R0 | Rb0 => 0x00,
+            R1 | Rb1 => 0x01,
+        }
+    }
+    
+    pub fn as_dest(&self) -> u8 {
+        self.as_src() << 4
+    }
+
+    pub fn as_src_with(&self, dest : &Self) -> u8 {
+        self.as_src() | dest.as_dest()
+    }
+}
+
 impl Value for Register {
     fn width(&self) -> Width {
         use Register::*;
@@ -45,6 +63,14 @@ impl Immediate {
 
     pub fn word(value : u16) -> Self {
         Self { width: Width::Word, value: value as u64 }
+    }
+
+    pub fn get_byte(&self, idx : u8) -> u8 {
+        (self.value >> (idx * 8)) as u8
+    }
+
+    pub fn get_word(&self, idx : u8) -> u16 {
+        (self.value >> (idx * 16)) as u16
     }
 }
 
