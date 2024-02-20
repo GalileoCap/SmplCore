@@ -7,5 +7,8 @@ use crate::prelude::*;
 pub enum Error {
     #[error("incompatible operands: {0:?}")]
     InvalidOperands(Instruction),
+
+    #[error("reached EOL")]
+    EOL,
 }
 pub type Result<T> = std::result::Result<T, Error>;
