@@ -7,6 +7,7 @@ use common::prelude::*;
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     Ident(String),
+    Number(u64),
 }
 
 fn skip_whitespace(scanner : &mut Scanner<char>) -> usize {
@@ -21,10 +22,48 @@ fn match_identifier(scanner : &mut Scanner<char>) -> Option<Token> {
         ).map(Token::Ident)
 }
 
+fn match_number(scanner : &mut Scanner<char>) -> Option<Token> {
+    if scanner.test(|c| c.is_ascii_digit() || *c == '-') { // TODO: is_numeric?
+        scanner.scan(|chars| match chars {
+            ['-'] => ScannerAction::Require, // ScannerAction::Request(Token::Punct('-')),
+            ['-', digits @ ..] if digits.iter().all(|c| c.is_ascii_digit())
+                => ScannerAction::Request(Token::Number(
+                    -digits.iter().collect::<String>().parse::<i64>().unwrap() as u64
+                    // TODO: Don't lose sign
+                )),
+            ['0'] => ScannerAction::Request(Token::Number(0)),
+
+            ['0', 'x'] => ScannerAction::Require,
+            ['0', 'x', digits @ ..] if digits.iter().all(|c| c.is_ascii_hexdigit())
+                => ScannerAction::Request(Token::Number(
+                    u64::from_str_radix(&digits.iter().collect::<String>(), 16).unwrap()
+                )),
+
+            ['0', 'o'] => ScannerAction::Require,
+            ['0', 'o', digits @ ..] if digits.iter().all(|c| c.is_digit(8))
+                => ScannerAction::Request(Token::Number(
+                    u64::from_str_radix(&digits.iter().collect::<String>(), 8).unwrap()
+                )),
+
+            ['0', 'b'] => ScannerAction::Require,
+            ['0', 'b', digits @ ..] if digits.iter().all(|c| c.is_digit(2))
+                => ScannerAction::Request(Token::Number(
+                    u64::from_str_radix(&digits.iter().collect::<String>(), 2).unwrap()
+                )),
+
+            _ if chars.iter().all(|c| c.is_ascii_digit())
+                => ScannerAction::Request(Token::Number(chars.iter().collect::<String>().parse().unwrap())),
+
+            _ => ScannerAction::None,
+        }).unwrap() // TODO: Handle
+    } else { None }
+}
+
 fn get_token(scanner : &mut Scanner<char>) -> Option<Token> {
     skip_whitespace(scanner);
 
     match_identifier(scanner)
+    .or_else(|| match_number(scanner))
 }
 
 pub fn tokenize(code : &str) -> Vec<Token> {
@@ -46,5 +85,22 @@ mod tests {
         let toks = tokenize(code);
         let res : Vec<_> = code.split_whitespace().map(|s| Token::Ident(s.to_string())).collect();
         assert_eq!(toks, res);
+    }
+
+    #[test]
+    fn number() {
+        let code = "0 0x0 0o0 0b0 62263 -62263 0xF337 0o171467 0b1111001100110111";
+        let toks = tokenize(code);
+        assert_eq!(toks, vec![
+            Token::Number(0),
+            Token::Number(0x0),
+            Token::Number(0o0),
+            Token::Number(0b0),
+            Token::Number(62263),
+            Token::Number(-62263i64 as u64),
+            Token::Number(0xF337),
+            Token::Number(0o171467),
+            Token::Number(0b1111001100110111),
+        ]);
     }
 }

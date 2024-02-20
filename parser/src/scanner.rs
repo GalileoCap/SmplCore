@@ -66,11 +66,11 @@ impl<T> Scanner<T> {
             sequence.push(c);
             match cb(&sequence) {
                 ScannerAction::Return(res) => break Ok(Some(res)),
-
-                ScannerAction::Request(res) => request = Some(res),
-
+                ScannerAction::Request(res) => {
+                    require = false;
+                    request = Some(res);
+                },
                 ScannerAction::Require => require  = true,
-
                 ScannerAction::None => {
                     self.vec.push_front(sequence.pop().unwrap()); // Put the char back
                     break if require { Err(Error::EOL) } else { Ok(request) }
