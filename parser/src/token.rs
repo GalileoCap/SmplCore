@@ -3,8 +3,41 @@ use common::prelude::*;
 
 use crate::{Scanner, ScannerAction};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GroupDelim {
+    Paren,
+    Brack,
+    Brace,
+    Nil,
+}
+
+impl GroupDelim {
+    pub fn from(c : &char) -> Option<Self> {
+        Self::from_open(c).or(Self::from_close(c))
+    }
+
+    pub fn from_open(c : &char) -> Option<Self> {
+        match c {
+            '(' => Some(Self::Paren),
+            '[' => Some(Self::Brack),
+            '{' => Some(Self::Brace),
+            _ => None,
+        }
+    }
+
+    pub fn from_close(c : &char) -> Option<Self> {
+        match c {
+            ')' => Some(Self::Paren),
+            ']' => Some(Self::Brack),
+            '}' => Some(Self::Brace),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
+    Group(GroupDelim, Vec<Token>),
     Ident(String),
     Number(u64),
     Punct(char),
@@ -64,11 +97,29 @@ fn match_punct(scanner : &mut Scanner<char>) -> Option<Token> {
         .map(Token::Punct)
 }
 
+fn match_group(scanner : &mut Scanner<char>) -> Option<Token> {
+    let delim = scanner.transform(GroupDelim::from_open)?;
+
+    let mut inside = Vec::new();
+    loop {
+        let Some(t) = get_token(scanner) else { panic!("Unclosed group.") }; //TODO: Handle
+        
+        match t {
+            Token::Punct(c)
+                if GroupDelim::from_close(&c).is_some_and(|close| delim == close) => break,
+            _ => inside.push(t),
+        }
+    }
+
+    Some(Token::Group(delim, inside))
+}
+
 fn get_token(scanner : &mut Scanner<char>) -> Option<Token> {
     skip_whitespace(scanner);
 
     match_identifier(scanner)
     .or_else(|| match_number(scanner))
+    .or_else(|| match_group(scanner))
     .or_else(|| match_punct(scanner))
 }
 
@@ -84,6 +135,21 @@ pub fn tokenize(code : &str) -> Vec<Token> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn group() {
+        let code = "(a) (a b) ((a)) [] {}";
+        let toks = tokenize(code);
+        assert_eq!(toks, vec![
+            Token::Group(GroupDelim::Paren, vec![Token::Ident("a".to_string())]),
+            Token::Group(GroupDelim::Paren, vec![Token::Ident("a".to_string()), Token::Ident("b".to_string())]),
+            Token::Group(GroupDelim::Paren, vec![
+                Token::Group(GroupDelim::Paren, vec![Token::Ident("a".to_string())])
+            ]),
+            Token::Group(GroupDelim::Brack, vec![]),
+            Token::Group(GroupDelim::Brace, vec![]),
+        ]);
+    }
 
     #[test]
     fn ident() {
