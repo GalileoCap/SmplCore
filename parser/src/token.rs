@@ -41,6 +41,7 @@ pub enum Token {
     Ident(String),
     Number(u64),
     Punct(char),
+    Comment(String),
 }
 
 fn skip_whitespace(scanner : &mut Scanner<char>) -> usize {
@@ -114,12 +115,31 @@ fn match_group(scanner : &mut Scanner<char>) -> Option<Token> {
     Some(Token::Group(delim, inside))
 }
 
+fn match_comment(scanner : &mut Scanner<char>) -> Option<Token> {
+    scanner.scan(|chars| match chars {
+        ['/'] => ScannerAction::Request(Token::Punct('/')),
+
+        ['/', '/'] => ScannerAction::Request(Token::Comment("".to_string())),
+        ['/', '/', comment @ .., '\n'] |
+        ['/', '/', comment @ .., '\r']
+            => ScannerAction::Return(Token::Comment(comment.into_iter().collect())),
+        ['/', '/', comment @ ..] => ScannerAction::Request(Token::Comment(comment.into_iter().collect())),
+
+        ['/', '*'] => ScannerAction::Require,
+        ['/', '*', comment @ .., '*', '/'] => ScannerAction::Return(Token::Comment(comment.into_iter().collect())),
+        ['/', '*', ..] => ScannerAction::Require,
+
+        _ => ScannerAction::None,
+    }).unwrap()
+}
+
 fn get_token(scanner : &mut Scanner<char>) -> Option<Token> {
     skip_whitespace(scanner);
 
     match_identifier(scanner)
     .or_else(|| match_number(scanner))
     .or_else(|| match_group(scanner))
+    .or_else(|| match_comment(scanner))
     .or_else(|| match_punct(scanner))
 }
 
@@ -173,6 +193,16 @@ mod tests {
             Token::Number(0xF337),
             Token::Number(0o171467),
             Token::Number(0b1111001100110111),
+        ]);
+    }
+
+    #[test]
+    fn comment() {
+        let code = "// 0 1 asd\n/* 0 1 *\n * / asd */";
+        let toks = tokenize(code);
+        assert_eq!(toks, vec![
+            Token::Comment(" 0 1 asd".to_string()),
+            Token::Comment(" 0 1 *\n * / asd ".to_string()),
         ]);
     }
 
