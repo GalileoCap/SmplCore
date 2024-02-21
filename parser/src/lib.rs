@@ -8,6 +8,7 @@ use common::prelude::*;
 pub enum Token {
     Ident(String),
     Number(u64),
+    Punct(char),
 }
 
 fn skip_whitespace(scanner : &mut Scanner<char>) -> usize {
@@ -25,7 +26,7 @@ fn match_identifier(scanner : &mut Scanner<char>) -> Option<Token> {
 fn match_number(scanner : &mut Scanner<char>) -> Option<Token> {
     if scanner.test(|c| c.is_ascii_digit() || *c == '-') { // TODO: is_numeric?
         scanner.scan(|chars| match chars {
-            ['-'] => ScannerAction::Require, // ScannerAction::Request(Token::Punct('-')),
+            ['-'] => ScannerAction::Request(Token::Punct('-')),
             ['-', digits @ ..] if digits.iter().all(|c| c.is_ascii_digit())
                 => ScannerAction::Request(Token::Number(
                     -digits.iter().collect::<String>().parse::<i64>().unwrap() as u64
@@ -59,11 +60,17 @@ fn match_number(scanner : &mut Scanner<char>) -> Option<Token> {
     } else { None }
 }
 
+fn match_punct(scanner : &mut Scanner<char>) -> Option<Token> {
+    scanner.take(|c| c.is_ascii_punctuation())
+        .map(Token::Punct)
+}
+
 fn get_token(scanner : &mut Scanner<char>) -> Option<Token> {
     skip_whitespace(scanner);
 
     match_identifier(scanner)
     .or_else(|| match_number(scanner))
+    .or_else(|| match_punct(scanner))
 }
 
 pub fn tokenize(code : &str) -> Vec<Token> {
@@ -101,6 +108,22 @@ mod tests {
             Token::Number(0xF337),
             Token::Number(0o171467),
             Token::Number(0b1111001100110111),
+        ]);
+    }
+
+    #[test]
+    fn punct() {
+        let code = "+ - * / % , ' \\";
+        let toks = tokenize(code);
+        assert_eq!(toks, vec![
+            Token::Punct('+'),
+            Token::Punct('-'),
+            Token::Punct('*'),
+            Token::Punct('/'),
+            Token::Punct('%'),
+            Token::Punct(','),
+            Token::Punct('\''),
+            Token::Punct('\\'),
         ]);
     }
 }
