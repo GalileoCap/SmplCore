@@ -34,6 +34,15 @@ impl Expr {
             Token::Ident(ident) if Register::from(ident).is_some()
                 => Self::movr2x(Register::from(ident).unwrap(), dest, ctx),
 
+            Token::Group(GroupDelim::Brack, toks) if toks.len() == 1 && toks[0].is_ident() => {
+                let Token::Ident(ident) = &toks[0] else { unreachable!() };
+                if let Some(src) = Register::from(ident) {
+                    Self::movrp2x(src, dest, ctx)
+                } else {
+                    Err(Error::UnexpectedToken("mov".to_string(), format!("{src:?}")))
+                }
+            },
+
             _ => Err(Error::UnexpectedToken("mov".to_string(), format!("{src:?}"))),
         }
     }
@@ -116,6 +125,29 @@ impl Expr {
             _ => Err(Error::UnexpectedToken("movr2x".to_string(), format!("{dest:?}"))),
         }
     }
+
+    fn movrp2x(src : Register, dest : &Token, _ctx : &CompileContext) -> Result<Vec<Instruction>> {
+        match dest {
+            Token::Ident(ident) if Register::from(ident).is_some()
+                => Ok(vec![Instruction::movrp2r(src, Register::from(ident).unwrap())?]),
+
+            Token::Group(GroupDelim::Brack, toks) if toks.len() == 1 && toks[0].is_ident() => {
+                let Token::Ident(ident) = &toks[0] else { unreachable!() };
+                if let Some(reg) = Register::from(&ident) {
+                    Ok(vec![Instruction::movrp2rp(src, reg)?])
+                } else {
+                    todo!("{ident}")
+                }
+            }
+
+            Token::Group(GroupDelim::Brack, toks) if toks.len() == 1 && toks[0].is_number() => {
+                let Token::Number(dest) = &toks[0] else { unreachable!() };
+                Ok(vec![Instruction::movrp2ip(src, Immediate::new(Width::Word, *dest)?)?])
+            },
+
+            _ => Err(Error::UnexpectedToken("movrp2x".to_string(), format!("{dest:?}"))),
+        }
+    }
 }
 
 #[derive(Default, Debug, Clone, PartialEq)]
@@ -182,6 +214,12 @@ mod test {
             ("mov r0, [r1]", Ok(vec![Instruction::movr2rp(Register::R0, Register::R1).unwrap()])),
             ("mov r0, [0x600D]", Ok(vec![Instruction::movr2ip(Register::R0, Immediate::word(0x600D)).unwrap()])),
             // ("label: mov r0, [label]", Ok(vec![Instruction::movr2ip(Register::R0, Immediate::word(0x0000)).unwrap()])),
+
+            ("mov [r0], rb1", Ok(vec![Instruction::movrp2r(Register::R0, Register::Rb1).unwrap()])),
+            ("mov [r0], r1", Ok(vec![Instruction::movrp2r(Register::R0, Register::R1).unwrap()])),
+            ("mov [r0], [r1]", Ok(vec![Instruction::movrp2rp(Register::R0, Register::R1).unwrap()])),
+            ("mov [r0], [0x600D]", Ok(vec![Instruction::movrp2ip(Register::R0, Immediate::word(0x600D)).unwrap()])),
+            // ("label: mov [r0], [label]", Ok(vec![Instruction::movrp2ip(Register::R0, Immediate::word(0x0000)).unwrap()])),
         ];
 
         for (code, expect) in cases.into_iter() {
