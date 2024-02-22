@@ -122,11 +122,11 @@ fn match_comment(scanner : &mut Scanner<char>) -> Option<Token> {
         ['/', '/'] => ScannerAction::Request(Token::Comment("".to_string())),
         ['/', '/', comment @ .., '\n'] |
         ['/', '/', comment @ .., '\r']
-            => ScannerAction::Return(Token::Comment(comment.into_iter().collect())),
-        ['/', '/', comment @ ..] => ScannerAction::Request(Token::Comment(comment.into_iter().collect())),
+            => ScannerAction::Return(Token::Comment(comment.iter().collect())),
+        ['/', '/', comment @ ..] => ScannerAction::Request(Token::Comment(comment.iter().collect())),
 
         ['/', '*'] => ScannerAction::Require,
-        ['/', '*', comment @ .., '*', '/'] => ScannerAction::Return(Token::Comment(comment.into_iter().collect())),
+        ['/', '*', comment @ .., '*', '/'] => ScannerAction::Return(Token::Comment(comment.iter().collect())),
         ['/', '*', ..] => ScannerAction::Require,
 
         _ => ScannerAction::None,
