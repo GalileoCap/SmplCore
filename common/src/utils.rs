@@ -10,5 +10,14 @@ pub enum Error {
 
     #[error("reached EOL")]
     EOL,
+
+    #[error("missing token in instruction \"{0}\"")]
+    MissingToken(String),
+
+    #[error("unexpected token \"{1}\" in instruction \"{0}\"")]
+    UnexpectedToken(String, String),
+
+    #[error("unknown instruction \"{0}\"")]
+    UnknownInstruction(String),
 }
 pub type Result<T> = std::result::Result<T, Error>;
