@@ -22,7 +22,13 @@ fn parse_instruction(ident : String, toks : &mut Scanner<Token>) -> Result<Expr>
 
 fn parse_toks(t : Token, toks : &mut Scanner<Token>) -> Result<Expr> {
     match t {
-        Token::Ident(ident) => parse_instruction(ident, toks),
+        Token::Ident(ident) => {
+            if toks.take(|c| *c == Token::Punct(':')).is_some() {
+                Ok(Expr::Label(ident))
+            } else {
+                parse_instruction(ident, toks)
+            }
+        }
         _ => todo!("{t:?}"),
     }
 }
@@ -42,6 +48,16 @@ pub fn parse(code : &str) -> Result<Vec<Expr>> {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn label() {
+        let code = "a_label: nop";
+        let exprs = parse(code);
+        assert_eq!(exprs, Ok(vec![
+            Expr::Label("a_label".to_string()),
+            Expr::Nop,
+        ]));
+    }
 
     #[test]
     fn nop() {
