@@ -92,6 +92,10 @@ impl Immediate {
         }
     }
 
+    pub fn new_unchecked(width : Width, value : u64) -> Self {
+        Self { width, value }
+    }
+
     pub fn byte(value : u8) -> Self {
         Self { width: Width::Byte, value: value as u64 }
     }

@@ -22,5 +22,8 @@ pub enum Error {
 
     #[error("unknown instruction \"{0}\"")]
     UnknownInstruction(String),
+
+    #[error("label not defined \"{0}\"")]
+    LabelNotDefined(String),
 }
 pub type Result<T> = std::result::Result<T, Error>;

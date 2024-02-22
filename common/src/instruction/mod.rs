@@ -18,6 +18,14 @@ pub enum Instruction {
     MovRP2IP(Register, Immediate),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ParamIdx {
+    SrcReg,
+    DestReg,
+    FirstImm,
+    SecondImm,
+}
+
 macro_rules! instruction_constructor {
     ($ident:ident, $IDENT:ident) => {
         pub fn $ident() -> Result<Self> {
@@ -85,8 +93,42 @@ impl Instruction {
     }
 
     #[allow(dead_code)]
-    fn len(&self) -> u16 {
+    pub fn len(&self) -> u16 {
         self.compile().len() as u16
+    }
+
+    pub fn replace_imm(self, param_idx : ParamIdx, new_value : u64) -> Result<Self> {
+        match param_idx {
+            ParamIdx::FirstImm => self.replace_first_imm(new_value),
+            ParamIdx::SecondImm => self.replace_second_imm(new_value),
+            _ => unreachable!(), // TODO: Error
+        }
+    }
+
+    pub fn replace_first_imm(self, new_value : u64) -> Result<Self> {
+        use Instruction::*;
+        match self {
+            MovI2R(src, dest) => Self::movi2r(Immediate::new_unchecked(src.width(), new_value), dest),
+            MovI2RP(src, dest) => Self::movip2r(Immediate::new_unchecked(src.width(), new_value), dest),
+            MovI2IP(src, dest) => Self::movi2ip(Immediate::new_unchecked(src.width(), new_value), dest),
+            MovIP2R(src, dest) => Self::movip2r(Immediate::new_unchecked(src.width(), new_value), dest),
+            MovIP2RP(src, dest) => Self::movip2rp(Immediate::new_unchecked(src.width(), new_value), dest),
+            MovIP2IP(src, dest) => Self::movip2ip(Immediate::new_unchecked(src.width(), new_value), dest),
+            MovR2IP(src, dest) => Self::movr2ip(src, Immediate::new_unchecked(dest.width(), new_value)),
+            MovRP2IP(src, dest) => Self::movrp2ip(src, Immediate::new_unchecked(dest.width(), new_value)),
+
+            _ => panic!(), // TODO: Error
+        }
+    }
+
+    pub fn replace_second_imm(self, new_value : u64) -> Result<Self> {
+        use Instruction::*;
+        match self {
+            MovI2IP(src, dest) => Self::movi2ip(src, Immediate::new_unchecked(dest.width(), new_value)),
+            MovIP2IP(src, dest) => Self::movip2ip(src, Immediate::new_unchecked(dest.width(), new_value)),
+
+            _ => panic!(), // TODO: Error
+        }
     }
 }
 
