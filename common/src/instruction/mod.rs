@@ -83,6 +83,11 @@ impl Instruction {
             MovRP2IP(src, dest) => src.width() == Width::Word && dest.width() == Width::Word,
         }
     }
+
+    #[allow(dead_code)]
+    fn len(&self) -> u16 {
+        self.compile().len() as u16
+    }
 }
 
 #[cfg(test)]

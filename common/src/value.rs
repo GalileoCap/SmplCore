@@ -10,6 +10,22 @@ pub enum Width {
     Byte, Word,
 }
 
+impl Width {
+    pub fn smallest_that_fits(value : u64) -> Self {
+        <u64 as TryInto<u8>>::try_into(value).map(|_| Self::Byte)
+            .or(<u64 as TryInto<u16>>::try_into(value).map(|_| Self::Word))
+            .unwrap()
+    }
+
+    pub fn fits(&self, value : u64) -> bool {
+        use Width::*;
+        match self {
+            Byte => <u64 as TryInto<u8>>::try_into(value).is_ok(),
+            Word => <u64 as TryInto<u16>>::try_into(value).is_ok(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Register {
     R0, R1,
@@ -17,6 +33,17 @@ pub enum Register {
 }
 
 impl Register {
+    pub fn from(s : &str) -> Option<Self> {
+        use Register::*;
+        match &*s.to_lowercase() {
+            "rb0" => Some(Rb0),
+            "r0" => Some(R0),
+            "rb1" => Some(Rb1),
+            "r1" => Some(R1),
+            _ => None,
+        }
+    }
+
     pub fn as_src(&self) -> u8 {
         use Register::*;
         match self {
@@ -57,6 +84,14 @@ pub struct Immediate {
 }
 
 impl Immediate {
+    pub fn new(width : Width, value : u64) -> Result<Self> {
+        if width.fits(value) {
+            Ok(Self { width, value })
+        } else {
+            Err(Error::NumberOOB(value, width))
+        }
+    }
+
     pub fn byte(value : u8) -> Self {
         Self { width: Width::Byte, value: value as u64 }
     }

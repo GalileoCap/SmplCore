@@ -8,6 +8,9 @@ pub enum Error {
     #[error("incompatible operands: {0:?}")]
     InvalidOperands(Instruction),
 
+    #[error("number out of bounds: {0} doesn't fit {1:?}")]
+    NumberOOB(u64, Width),
+
     #[error("reached EOL")]
     EOL,
 
