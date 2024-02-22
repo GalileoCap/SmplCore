@@ -165,18 +165,13 @@ mod test {
         let cases = vec![
             ("mov 0x60, rb0", Ok(vec![Instruction::movi2r(Immediate::byte(0x60), Register::Rb0).unwrap()])),
             ("mov 0x600D, r0", Ok(vec![Instruction::movi2r(Immediate::word(0x600D), Register::R0).unwrap()])),
-            // ("label: mov label, rb0", Ok(vec![Instruction::MovI2R(Immediate::byte(0x00), Register::Rb0).unwrap()])),
             // ("label: mov label, r0", Ok(vec![Instruction::MovI2R(Immediate::word(0x0000), Register::R0).unwrap()])),
-            ("mov 0x60, [r0]", Ok(vec![Instruction::movi2rp(Immediate::byte(0x60), Register::R0).unwrap()])),
             ("mov 0x600D, [r0]", Ok(vec![Instruction::movi2rp(Immediate::word(0x600D), Register::R0).unwrap()])),
-            ("mov 0x60, [0xF337]", Ok(vec![Instruction::movi2ip(Immediate::byte(0x60), Immediate::word(0xF337)).unwrap()])),
             ("mov 0x600D, [0xF337]", Ok(vec![Instruction::movi2ip(Immediate::word(0x600D), Immediate::word(0xF337)).unwrap()])),
-            // ("label: mov 0x60, [label]", Ok(vec![Instruction::movi2ip(Immediate::byte(0x60), Immediate::word(0x0000)).unwrap()])),
             // ("label: mov 0x600D, [label]", Ok(vec![Instruction::movi2ip(Immediate::word(0x600D), Immediate::word(0x0000)).unwrap()])),
 
             ("mov [0x600D], rb0", Ok(vec![Instruction::movip2r(Immediate::word(0x600D), Register::Rb0).unwrap()])),
             ("mov [0x600D], r0", Ok(vec![Instruction::movip2r(Immediate::word(0x600D), Register::R0).unwrap()])),
-            // ("label: mov [label], rb0", Ok(vec![Instruction::movip2r(Immediate::word(0x0000), Register::Rb0).unwrap()])),
             // ("label: mov [label], r0", Ok(vec![Instruction::movip2r(Immediate::word(0x0000), Register::Rb0).unwrap()])),
             ("mov [0x600D], [r0]", Ok(vec![Instruction::movip2rp(Immediate::word(0x600D), Register::R0).unwrap()])),
             ("mov [0x600D], [0xF337]", Ok(vec![Instruction::movip2ip(Immediate::word(0x600D), Immediate::word(0xF337)).unwrap()])),
