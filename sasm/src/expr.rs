@@ -1,4 +1,3 @@
-#![allow(unused_braces)]
 use std::collections::HashMap;
 
 #[allow(unused_imports)]
@@ -130,7 +129,7 @@ pub struct CompileContext {
     instructions : Vec<Instruction>,
 }
 
-pub fn compile_to_instructions(code : &str) -> Result<Vec<Instruction>> {
+fn compile_to_context(code : &str) -> Result<CompileContext> {
     let mut ctx = CompileContext::default();
     for expr in parse(code)?.into_iter() {
         if let Expr::Label(label) = expr {
@@ -140,14 +139,24 @@ pub fn compile_to_instructions(code : &str) -> Result<Vec<Instruction>> {
             ctx.instructions.append(&mut instructions);
         }
     }
+    Ok(ctx)
+}
 
+fn calc_label_offsets(ctx : &CompileContext) -> Vec<u16> {
     let mut offsets = Vec::new();
     let mut accum = 0;
     for instruction in ctx.instructions.iter() {
         offsets.push(accum);
         accum += instruction.len();
     }
+    offsets
+}
 
+pub fn compile_to_instructions(code : &str) -> Result<Vec<Instruction>> {
+    let mut ctx = compile_to_context(code)?;
+    let offsets = calc_label_offsets(&ctx);
+    
+    // Replace labels
     for (label, instruction_idx, param_idx) in ctx.label_refs {
         let Some(offset_idx) = ctx.label_defs.get(&label) else { return Err(Error::LabelNotDefined(label.to_owned())) };
         let offset = offsets[*offset_idx];

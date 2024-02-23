@@ -92,7 +92,7 @@ impl Instruction {
         }
     }
 
-    #[allow(dead_code)]
+    #[allow(dead_code, clippy::len_without_is_empty)]
     pub fn len(&self) -> u16 {
         self.compile().len() as u16
     }

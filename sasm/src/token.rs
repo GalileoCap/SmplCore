@@ -46,17 +46,11 @@ pub enum Token {
 
 impl Token {
     pub fn is_ident(&self) -> bool {
-        match self {
-            Self::Ident(_) => true,
-            _ => false,
-        }
+        matches!(self, Self::Ident(_))
     }
 
     pub fn is_number(&self) -> bool {
-        match self {
-            Self::Number(_) => true,
-            _ => false,
-        }
+        matches!(self, Self::Number(_))
     }
 }
 
