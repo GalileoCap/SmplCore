@@ -215,4 +215,16 @@ mod test {
             assert_eq!(instructions, expect, "\"{code}\"");
         }
     }
+
+    #[test]
+    fn comment() {
+        let cases = vec![
+            ("/* NOPE */ nop /* NOPE */\n/* NOPE */ label: /* NOPE */ mov /* NOPE */ 0x600D /* NOPE */, /* NOPE */[/* NOPE */ label /* NOPE */] /* NOPE */ // NOPE /* NOPE */ // NOPE\nnop", Ok(vec![Instruction::nop().unwrap(), Instruction::movi2ip(Immediate::word(0x600D), Immediate::word(0x0002)).unwrap(), Instruction::nop().unwrap()])),
+        ];
+
+        for (code, expect) in cases.into_iter() {
+            let instructions = compile_to_instructions(code);
+            assert_eq!(instructions, expect, "\"{code}\"");
+        }
+    }
 }

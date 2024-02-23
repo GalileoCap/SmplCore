@@ -29,7 +29,9 @@ fn parse_toks(t : Token, toks : &mut Scanner<Token>) -> Result<Expr> {
                 parse_instruction(ident, toks)
             }
         }
-        _ => todo!("{t:?}"),
+
+        Token::Comment(_) => unreachable!(),
+        _ => Err(Error::UnexpectedToken("parse_toks".to_string(), format!("{t:?}"))),
     }
 }
 
