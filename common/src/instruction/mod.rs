@@ -101,7 +101,7 @@ impl Instruction {
         match param_idx {
             ParamIdx::FirstImm => self.replace_first_imm(new_value),
             ParamIdx::SecondImm => self.replace_second_imm(new_value),
-            _ => unreachable!(), // TODO: Error
+            _ => unreachable!("{param_idx:?}"), // TODO: Error
         }
     }
 
@@ -126,8 +126,10 @@ impl Instruction {
         match self {
             MovI2IP(src, dest) => Self::movi2ip(src, Immediate::new_unchecked(dest.width(), new_value)),
             MovIP2IP(src, dest) => Self::movip2ip(src, Immediate::new_unchecked(dest.width(), new_value)),
+            MovR2IP(src, dest) => Self::movr2ip(src, Immediate::new_unchecked(dest.width(), new_value)),
+            MovRP2IP(src, dest) => Self::movrp2ip(src, Immediate::new_unchecked(dest.width(), new_value)),
 
-            _ => panic!(), // TODO: Error
+            _ => panic!("{self:?}"), // TODO: Error
         }
     }
 }
