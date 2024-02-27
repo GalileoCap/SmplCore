@@ -101,11 +101,11 @@ impl Register {
 
     pub fn from_src(width : Width, byte : u8) -> Self {
         match byte & 0xF {
-            0xB => Self::rinfo(),
-            0xC => Self::rip(),
+            0xB => Self::rsb(),
+            0xC => Self::rsh(),
             0xD => Self::flags(),
-            0xE => Self::rsh(),
-            0xF => Self::rsb(),
+            0xE => Self::rip(),
+            0xF => Self::rinfo(),
             idx => Self::r(width, idx),
         }
     }
@@ -118,11 +118,11 @@ impl Register {
         use Register::*;
         match self {
             R(_, idx) => *idx,
-            RINFO => 0xB,
-            RIP => 0xC,
+            RSB => 0xB,
+            RSH => 0xC,
             Flags => 0xD,
-            RSH => 0xE,
-            RSB => 0xF,
+            RIP => 0xE,
+            RINFO => 0xF,
         }
     }
     
@@ -186,6 +186,10 @@ impl Immediate {
 
     pub fn get_word(&self, idx : u8) -> u16 {
         (self.value >> (idx * 16)) as u16
+    }
+
+    pub fn get_value(&self) -> u64 {
+        self.value
     }
 }
 
