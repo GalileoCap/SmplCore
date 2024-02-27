@@ -37,5 +37,8 @@ pub enum Error {
 
     #[error("no such opcode \"{0:#04x}\"")]
     NoSuchOpcode(u8),
+
+    #[error("{0}")]
+    Misc(String),
 }
 pub type Result<T> = std::result::Result<T, Error>;
