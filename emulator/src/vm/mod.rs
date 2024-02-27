@@ -145,4 +145,8 @@ impl VM {
             self.ram.get((addr - 0x8000) as usize).map_or(0, |b| *b)
         }
     }
+
+    pub fn regs(&self) -> Vec<u16> {
+        self.regs.iter().map(|reg| (*reg).into()).collect()
+    }
 }
