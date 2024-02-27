@@ -25,5 +25,17 @@ pub enum Error {
 
     #[error("label not defined \"{0}\"")]
     LabelNotDefined(String),
+
+    #[error("missing opcode")]
+    NoOpcode,
+
+    #[error("missing registers")]
+    NoRegs,
+
+    #[error("missing value byte {0}")]
+    NoValue(u8),
+
+    #[error("no such opcode \"{0:#04x}\"")]
+    NoSuchOpcode(u8),
 }
 pub type Result<T> = std::result::Result<T, Error>;

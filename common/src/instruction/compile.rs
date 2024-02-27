@@ -62,6 +62,7 @@ mod test {
                 let instr = Instruction::$ident().unwrap();
                 let bytes = instr.compile();
                 assert_eq!(bytes, $bytes);
+                assert_eq!(Instruction::decompile(&bytes), Ok(instr));
             }
         };
 
@@ -72,6 +73,7 @@ mod test {
                     let instr = Instruction::$ident($param).unwrap();
                     let bytes = instr.compile();
                     assert_eq!(bytes, $bytes);
+                    assert_eq!(Instruction::decompile(&bytes), Ok(instr));
                 )+
             }
         };
@@ -83,6 +85,7 @@ mod test {
                     let instr = Instruction::$ident($left, $right).unwrap();
                     let bytes = instr.compile();
                     assert_eq!(bytes, $bytes);
+                    assert_eq!(Instruction::decompile(&bytes), Ok(instr));
                 )+
             }
         };

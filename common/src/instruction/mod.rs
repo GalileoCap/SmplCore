@@ -1,5 +1,6 @@
 use crate::prelude::*;
 mod compile;
+mod decompile;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Instruction {

@@ -44,6 +44,27 @@ impl Register {
         }
     }
 
+    pub fn from_src(width : Width, byte : u8) -> Self {
+        use Register::*;
+        match width {
+            Width::Byte => match byte & 0x0F {
+                0 => Rb0,
+                1 => Rb0,
+                _ => todo!(),
+            },
+
+            Width::Word => match byte & 0x0F {
+                0 => R0,
+                1 => R0,
+                _ => todo!(),
+            },
+        }
+    }
+
+    pub fn from_dest(width : Width, byte : u8) -> Self {
+        Self::from_src(width, byte >> 4)
+    }
+
     pub fn as_src(&self) -> u8 {
         use Register::*;
         match self {
@@ -59,6 +80,7 @@ impl Register {
     pub fn as_src_with(&self, dest : &Self) -> u8 {
         self.as_src() | dest.as_dest()
     }
+
 }
 
 impl Value for Register {
