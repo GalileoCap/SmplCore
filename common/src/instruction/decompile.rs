@@ -20,6 +20,12 @@ impl Instruction {
             0x08 => Self::decompile_movip2r(Width::Word, *regs, bytes),
             0x09 => Self::decompile_movip2rp(*regs, bytes),
             0x0A => Self::decompile_movip2ip(bytes),
+            0x0B => Self::decompile_movr2r(Width::Byte, *regs),
+            0x0C => Self::decompile_movr2r(Width::Word, *regs),
+            0x0D => Self::decompile_movr2rp(Width::Byte, *regs),
+            0x0E => Self::decompile_movr2rp(Width::Word, *regs),
+            0x0F => Self::decompile_movr2ip(Width::Byte, *regs, bytes),
+            0x10 => Self::decompile_movr2ip(Width::Word, *regs, bytes),
             _ => Err(Error::NoSuchOpcode(*opcode)),
         }
     }
@@ -84,5 +90,27 @@ impl Instruction {
         let dest = (*dest_lower as u64) | ((*dest_higher as u64) << 8);
         let dest = Immediate::new(Width::Word, dest)?;
         Instruction::movip2ip(value, dest)
+    }
+
+    fn decompile_movr2r(width : Width, regs : u8) -> Result<Self> {
+        let src = Register::from_src(width, regs);
+        let dest = Register::from_dest(width, regs);
+        Instruction::movr2r(src, dest)
+    }
+
+    fn decompile_movr2rp(width : Width, regs : u8) -> Result<Self> {
+        let src = Register::from_src(width, regs);
+        let dest = Register::from_dest(Width::Word, regs);
+        Instruction::movr2rp(src, dest)
+    }
+
+    fn decompile_movr2ip(width : Width, regs : u8, bytes : &[u8]) -> Result<Self> {
+        let src = Register::from_src(width, regs);
+        let Some(value_lower) = bytes.get(2) else { return Err(Error::NoValue(0)) };
+        let Some(value_higher) = bytes.get(3) else { return Err(Error::NoValue(1)) };
+        let value = (*value_lower as u64) | ((*value_higher as u64) << 8);
+        let dest = Immediate::new(Width::Word, value)?;
+
+        Instruction::movr2ip(src, dest)
     }
 }
