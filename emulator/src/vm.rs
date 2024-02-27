@@ -17,7 +17,7 @@ impl VM {
     }
 
     pub fn boot(&mut self) {
-        self.set_reg(&Register::rip(), 0);
+        self.set_reg_value(&Register::rip(), 0);
         self.ram = vec![0; self.ram.len()];
     }
 
@@ -28,7 +28,7 @@ impl VM {
         let instr = Instruction::decompile(&bytes)?;
 
         // Move RIP
-        self.set_reg(&Register::rip(), rip.wrapping_add(instr.len()) as u64);
+        self.set_reg_value(&Register::rip(), rip.wrapping_add(instr.len()) as u64);
 
         self.execute(&instr)?;
 
@@ -39,14 +39,20 @@ impl VM {
         use Instruction::*;
         match instr {
             Nop => Ok(()),
+            MovI2R(value, dest) => Ok(self.set_reg(dest, value)),
+
             _ => todo!("{instr:?}"),
         }
     }
 
-    pub fn set_reg(&mut self, reg : &Register, value : u64) {
-        self.regs[reg.as_src() as usize] = value
+    pub fn set_reg(&mut self, reg : &Register, value : &Immediate) {
+        self.set_reg_value(reg, value.get_value())
     }
 
+    pub fn set_reg_value(&mut self, reg : &Register, value : u64) {
+        self.regs[reg.as_src() as usize] = value
+    }
+    
     pub fn get_reg(&self, reg : &Register) -> Immediate {
         let value = self.regs[reg.as_src() as usize];
         Immediate::new_unchecked(reg.width(), value)
@@ -93,7 +99,7 @@ mod test {
     macro_rules! case {
         ($ident:ident, $code:expr, $reps:literal, $regs:expr) => {
             #[test]
-            fn nop() {
+            fn $ident() {
                 let rom = $code.into_iter().flat_map(|instr| instr.unwrap().compile()).collect();
                 let mut vm = VM::new(rom, 0x8000);
 
@@ -108,4 +114,8 @@ mod test {
     }
 
     case!(nop, [Instruction::nop()], 1, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x02, 0]);
+    case!(movi2r, [
+        Instruction::movi2r(Immediate::byte(0x60), Register::rb0()),
+        Instruction::movi2r(Immediate::word(0x600D), Register::r1()),
+    ], 2, [0x60, 0x600D, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x08, 0]);
 }
