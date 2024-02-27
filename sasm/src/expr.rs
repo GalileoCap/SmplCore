@@ -82,7 +82,7 @@ impl Expr {
     );
     
     to_instructions!(
-        fn movi2x(left : u64, right : Token, ctx) SECOND
+        fn movi2x(left : u16, right : Token, ctx) SECOND
         { Err(Error::UnexpectedToken("movi2x".to_string(), format!("{right:?}"))) }
         { Ok(vec![Instruction::movi2ip(
             Immediate::new(Width::smallest_that_fits(*left), *left)?,
@@ -93,7 +93,7 @@ impl Expr {
     );
  
     to_instructions!(
-        fn movip2x(left : u64, right : Token, ctx) SECOND
+        fn movip2x(left : u16, right : Token, ctx) SECOND
         { Err(Error::UnexpectedToken("movip2x".to_string(), format!("{right:?}"))) }
         { Ok(vec![Instruction::movip2ip(
             Immediate::new(Width::Word, *left)?,

@@ -43,7 +43,7 @@ pub fn compile_to_instructions(code : &str) -> Result<Vec<Instruction>> {
         let Some(offset_idx) = ctx.label_defs.get(&label) else { return Err(Error::LabelNotDefined(label.to_owned())) };
         let offset = offsets[*offset_idx];
         ctx.instructions[instruction_idx] = ctx.instructions[instruction_idx].clone()
-                                                .replace_imm(param_idx, offset as u64)?;
+                                                .replace_imm(param_idx, offset as u16)?;
     }
 
     Ok(ctx.instructions)

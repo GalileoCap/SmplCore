@@ -18,7 +18,7 @@ macro_rules! get_imm {
     (src, $width:expr, $bytes:ident) => {
         if let Some(b0) = $bytes.get(2) {
             if let Some(b1) = $bytes.get(3) {
-                Immediate::new($width, (*b0 as u64) | ((*b1 as u64) << 8))
+                Immediate::new($width, (*b0 as u16) | ((*b1 as u16) << 8))
             } else { Err(Error::NoValue(1)) }
         } else { Err(Error::NoValue(0)) }
     };
@@ -26,7 +26,7 @@ macro_rules! get_imm {
     (dest, $width:expr, $bytes:ident) => {
         if let Some(b0) = $bytes.get(4) {
             if let Some(b1) = $bytes.get(5) {
-                Immediate::new($width, (*b0 as u64) | ((*b1 as u64) << 8))
+                Immediate::new($width, (*b0 as u16) | ((*b1 as u16) << 8))
             } else { Err(Error::NoValue(1)) }
         } else { Err(Error::NoValue(0)) }
     };

@@ -11,17 +11,17 @@ pub enum Width {
 }
 
 impl Width {
-    pub fn smallest_that_fits(value : u64) -> Self {
-        <u64 as TryInto<u8>>::try_into(value).map(|_| Self::Byte)
-            .or(<u64 as TryInto<u16>>::try_into(value).map(|_| Self::Word))
+    pub fn smallest_that_fits(value : u16) -> Self {
+        <u16 as TryInto<u8>>::try_into(value).map(|_| Self::Byte)
+            .or(<u16 as TryInto<u16>>::try_into(value).map(|_| Self::Word))
             .unwrap()
     }
 
-    pub fn fits(&self, value : u64) -> bool {
+    pub fn fits(&self, value : u16) -> bool {
         use Width::*;
         match self {
-            Byte => <u64 as TryInto<u8>>::try_into(value).is_ok(),
-            Word => <u64 as TryInto<u16>>::try_into(value).is_ok(),
+            Byte => <u16 as TryInto<u8>>::try_into(value).is_ok(),
+            Word => <u16 as TryInto<u16>>::try_into(value).is_ok(),
         }
     }
 
@@ -165,28 +165,28 @@ impl std::fmt::Display for Register {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Immediate {
     width : Width,
-    value : u64,
+    value : u16,
 }
 
 impl Immediate {
-    pub fn new(width : Width, value : u64) -> Result<Self> {
+    pub fn new(width : Width, value : u16) -> Result<Self> {
         if width.fits(value) {
             Ok(Self { width, value })
         } else {
-            Err(Error::NumberOOB(value, width))
+            Err(Error::NumberOOB(value as u64, width))
         }
     }
 
-    pub fn new_unchecked(width : Width, value : u64) -> Self {
+    pub fn new_unchecked(width : Width, value : u16) -> Self {
         Self { width, value }
     }
 
     pub fn byte(value : u8) -> Self {
-        Self { width: Width::Byte, value: value as u64 }
+        Self { width: Width::Byte, value: value as u16 }
     }
 
     pub fn word(value : u16) -> Self {
-        Self { width: Width::Word, value: value as u64 }
+        Self { width: Width::Word, value: value as u16 }
     }
 
     pub fn get_byte(&self, idx : u8) -> u8 {
@@ -197,7 +197,7 @@ impl Immediate {
         (self.value >> (idx * 16)) as u16
     }
 
-    pub fn get_value(&self) -> u64 {
+    pub fn get_value(&self) -> u16 {
         self.value
     }
 }

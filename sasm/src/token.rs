@@ -39,7 +39,7 @@ impl GroupDelim {
 pub enum Token {
     Group(GroupDelim, Vec<Token>),
     Ident(String),
-    Number(u64),
+    Number(u16),
     Punct(char),
     Comment(String),
 }
@@ -72,7 +72,7 @@ fn match_number(scanner : &mut Scanner<char>) -> Option<Token> {
             ['-'] => ScannerAction::Request(Token::Punct('-')),
             ['-', digits @ ..] if digits.iter().all(|c| c.is_ascii_digit())
                 => ScannerAction::Request(Token::Number(
-                    -digits.iter().collect::<String>().parse::<i64>().unwrap() as u64
+                    -digits.iter().collect::<String>().parse::<i16>().unwrap() as u16
                     // TODO: Don't lose sign
                 )),
             ['0'] => ScannerAction::Request(Token::Number(0)),
@@ -80,19 +80,19 @@ fn match_number(scanner : &mut Scanner<char>) -> Option<Token> {
             ['0', 'x'] => ScannerAction::Require,
             ['0', 'x', digits @ ..] if digits.iter().all(|c| c.is_ascii_hexdigit())
                 => ScannerAction::Request(Token::Number(
-                    u64::from_str_radix(&digits.iter().collect::<String>(), 16).unwrap()
+                    u16::from_str_radix(&digits.iter().collect::<String>(), 16).unwrap()
                 )),
 
             ['0', 'o'] => ScannerAction::Require,
             ['0', 'o', digits @ ..] if digits.iter().all(|c| c.is_digit(8))
                 => ScannerAction::Request(Token::Number(
-                    u64::from_str_radix(&digits.iter().collect::<String>(), 8).unwrap()
+                    u16::from_str_radix(&digits.iter().collect::<String>(), 8).unwrap()
                 )),
 
             ['0', 'b'] => ScannerAction::Require,
             ['0', 'b', digits @ ..] if digits.iter().all(|c| c.is_digit(2))
                 => ScannerAction::Request(Token::Number(
-                    u64::from_str_radix(&digits.iter().collect::<String>(), 2).unwrap()
+                    u16::from_str_radix(&digits.iter().collect::<String>(), 2).unwrap()
                 )),
 
             _ if chars.iter().all(|c| c.is_ascii_digit())
@@ -197,7 +197,7 @@ mod tests {
 
     #[test]
     fn number() {
-        let code = "0 0x0 0o0 0b0 62263 -62263 0xF337 0o171467 0b1111001100110111";
+        let code = "0 0x0 0o0 0b0 62263 -3273 0xF337 0o171467 0b1111001100110111";
         let toks = tokenize(code);
         assert_eq!(toks, vec![
             Token::Number(0),
@@ -205,7 +205,7 @@ mod tests {
             Token::Number(0o0),
             Token::Number(0b0),
             Token::Number(62263),
-            Token::Number(-62263i64 as u64),
+            Token::Number(-3273i16 as u16),
             Token::Number(0xF337),
             Token::Number(0o171467),
             Token::Number(0b1111001100110111),

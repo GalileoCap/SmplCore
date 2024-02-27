@@ -98,7 +98,7 @@ impl Instruction {
         self.compile().len() as u16
     }
 
-    pub fn replace_imm(self, param_idx : ParamIdx, new_value : u64) -> Result<Self> {
+    pub fn replace_imm(self, param_idx : ParamIdx, new_value : u16) -> Result<Self> {
         match param_idx {
             ParamIdx::FirstImm => self.replace_first_imm(new_value),
             ParamIdx::SecondImm => self.replace_second_imm(new_value),
@@ -106,7 +106,7 @@ impl Instruction {
         }
     }
 
-    pub fn replace_first_imm(self, new_value : u64) -> Result<Self> {
+    pub fn replace_first_imm(self, new_value : u16) -> Result<Self> {
         use Instruction::*;
         match self {
             MovI2R(src, dest) => Self::movi2r(Immediate::new_unchecked(src.width(), new_value), dest),
@@ -122,7 +122,7 @@ impl Instruction {
         }
     }
 
-    pub fn replace_second_imm(self, new_value : u64) -> Result<Self> {
+    pub fn replace_second_imm(self, new_value : u16) -> Result<Self> {
         use Instruction::*;
         match self {
             MovI2IP(src, dest) => Self::movi2ip(src, Immediate::new_unchecked(dest.width(), new_value)),

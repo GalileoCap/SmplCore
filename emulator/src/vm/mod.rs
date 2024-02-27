@@ -34,7 +34,7 @@ impl VM {
         let instr = Instruction::decompile(&bytes)?;
 
         // Move RIP
-        self.set_reg_value(&Register::rip(), rip.wrapping_add(instr.len()) as u64);
+        self.set_reg_value(&Register::rip(), rip.wrapping_add(instr.len()) as u16);
 
         self.execute(&instr)?;
 
@@ -90,7 +90,7 @@ impl VM {
         };
     }
 
-    pub fn set_reg_value(&mut self, reg : &Register, value : u64) {
+    pub fn set_reg_value(&mut self, reg : &Register, value : u16) {
         self.regs[reg.as_src() as usize] = value.into()
     }
     
@@ -129,7 +129,7 @@ impl VM {
         let mut value = 0;
         for idx in 0..width.len() {
             let byte = self.get_mem_byte(addr.wrapping_add(idx as u16));
-            value |= (byte as u64) << (8 * idx);
+            value |= (byte as u16) << (8 * idx);
         }
         Immediate::new_unchecked(width, value)
     }

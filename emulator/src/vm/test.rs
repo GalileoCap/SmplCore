@@ -15,7 +15,7 @@ macro_rules! case {
                 vm.execute_next().unwrap();
             }
 
-            assert_eq!(vm.regs.iter().map(|reg| (*reg).into()).collect::<Vec<u64>>(), $regs);
+            assert_eq!(vm.regs.iter().map(|reg| (*reg).into()).collect::<Vec<u16>>(), $regs);
             for (addr, value) in $mem.into_iter() {
                 assert_eq!(vm.get_mem_byte(addr), value, "at {addr:#06X}");
             }
