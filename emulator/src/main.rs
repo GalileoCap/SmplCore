@@ -1,5 +1,7 @@
 mod vm;
 
+use std::io::{Read, Write};
+
 #[allow(unused_imports)]
 use common::prelude::*;
 
@@ -20,6 +22,10 @@ pub struct Args {
     /// Size of the RAM available during execution
     #[arg(long, default_value_t = 0x8000)]
     ram_size : usize,
+
+    /// Enable debugging
+    #[arg(long, default_value_t = false)]
+    debug : bool,
 }
 
 fn main() -> Result<()> {
@@ -29,6 +35,12 @@ fn main() -> Result<()> {
     let mut vm = VM::new(rom, args.ram_size);
 
     for _ in 0..args.reps {
+        if args.debug {
+            println!("{:?}", vm.regs());
+            print!("> ");
+            std::io::stdout().flush().unwrap();
+            std::io::stdin().read(&mut [0u8]).unwrap();
+        }
         vm.execute_next()?;
     }
     println!("Finished with: {:?}", vm.regs());
