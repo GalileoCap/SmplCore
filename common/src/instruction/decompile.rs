@@ -26,6 +26,10 @@ impl Instruction {
             0x0E => Self::decompile_movr2rp(Width::Word, *regs),
             0x0F => Self::decompile_movr2ip(Width::Byte, *regs, bytes),
             0x10 => Self::decompile_movr2ip(Width::Word, *regs, bytes),
+            0x11 => Self::decompile_movrp2r(Width::Byte, *regs),
+            0x12 => Self::decompile_movrp2r(Width::Word, *regs),
+            0x13 => Self::decompile_movrp2rp(*regs),
+            0x14 => Self::decompile_movrp2ip(*regs, bytes),
             _ => Err(Error::NoSuchOpcode(*opcode)),
         }
     }
@@ -112,5 +116,27 @@ impl Instruction {
         let dest = Immediate::new(Width::Word, value)?;
 
         Instruction::movr2ip(src, dest)
+    }
+
+    fn decompile_movrp2r(width : Width, regs : u8) -> Result<Self> {
+        let src = Register::from_src(Width::Word, regs);
+        let dest = Register::from_dest(width, regs);
+        Instruction::movrp2r(src, dest)
+    }
+
+    fn decompile_movrp2rp(regs : u8) -> Result<Self> {
+        let src = Register::from_src(Width::Word, regs);
+        let dest = Register::from_dest(Width::Word, regs);
+        Instruction::movrp2rp(src, dest)
+    }
+
+    fn decompile_movrp2ip(regs : u8, bytes : &[u8]) -> Result<Self> {
+        let src = Register::from_src(Width::Word, regs);
+        let Some(value_lower) = bytes.get(2) else { return Err(Error::NoValue(0)) };
+        let Some(value_higher) = bytes.get(3) else { return Err(Error::NoValue(1)) };
+        let value = (*value_lower as u64) | ((*value_higher as u64) << 8);
+        let dest = Immediate::new(Width::Word, value)?;
+
+        Instruction::movrp2ip(src, dest)
     }
 }
