@@ -2,141 +2,132 @@
 use crate::prelude::*;
 use super::*;
 
-impl Instruction {
-    pub fn decompile(bytes : &[u8]) -> crate::prelude::Result<Self> {
-        let Some(opcode) = bytes.get(0) else { return Err(Error::NoOpcode) };
-        let Some(regs) = bytes.get(1) else { return Err(Error::NoRegs) };
+macro_rules! get_regs {
+    ($src_width:expr, $dest_width:expr, $bytes:ident) => {
+        $bytes.get(1)
+            .map(|regs| (Register::from_src($src_width, *regs), Register::from_dest($dest_width, *regs)))
+            .ok_or(Error::NoRegs)
+    };
 
+    ($width:expr, $bytes:ident) => {
+        get_regs!($width, $width, $bytes)
+    };
+}
+
+macro_rules! get_imm {
+    (src, $width:expr, $bytes:ident) => {
+        if let Some(b0) = $bytes.get(2) {
+            if let Some(b1) = $bytes.get(3) {
+                Immediate::new($width, (*b0 as u64) | ((*b1 as u64) << 8))
+            } else { Err(Error::NoValue(1)) }
+        } else { Err(Error::NoValue(0)) }
+    };
+
+    (dest, $width:expr, $bytes:ident) => {
+        if let Some(b0) = $bytes.get(4) {
+            if let Some(b1) = $bytes.get(5) {
+                Immediate::new($width, (*b0 as u64) | ((*b1 as u64) << 8))
+            } else { Err(Error::NoValue(1)) }
+        } else { Err(Error::NoValue(0)) }
+    };
+}
+
+impl Instruction {
+    pub fn decompile(bytes : &[u8]) -> Result<Self> {
+        let opcode = bytes.get(0).ok_or(Error::NoOpcode)?;
         match opcode {
             // TODO: Mix with Instruction::opcode() to update both at the same time
             0x00 => Self::nop(),
-            0x01 => Self::decompile_movi2r(Width::Byte, *regs, bytes),
-            0x02 => Self::decompile_movi2r(Width::Word, *regs, bytes),
-            0x03 => Self::decompile_movi2rp(Width::Byte, *regs, bytes),
-            0x04 => Self::decompile_movi2rp(Width::Word, *regs, bytes),
+            0x01 => Self::decompile_movi2r(Width::Byte, bytes),
+            0x02 => Self::decompile_movi2r(Width::Word, bytes),
+            0x03 => Self::decompile_movi2rp(Width::Byte, bytes),
+            0x04 => Self::decompile_movi2rp(Width::Word, bytes),
             0x05 => Self::decompile_movi2ip(Width::Byte, bytes),
             0x06 => Self::decompile_movi2ip(Width::Word, bytes),
-            0x07 => Self::decompile_movip2r(Width::Byte, *regs, bytes),
-            0x08 => Self::decompile_movip2r(Width::Word, *regs, bytes),
-            0x09 => Self::decompile_movip2rp(*regs, bytes),
+            0x07 => Self::decompile_movip2r(Width::Byte, bytes),
+            0x08 => Self::decompile_movip2r(Width::Word, bytes),
+            0x09 => Self::decompile_movip2rp(bytes),
             0x0A => Self::decompile_movip2ip(bytes),
-            0x0B => Self::decompile_movr2r(Width::Byte, *regs),
-            0x0C => Self::decompile_movr2r(Width::Word, *regs),
-            0x0D => Self::decompile_movr2rp(Width::Byte, *regs),
-            0x0E => Self::decompile_movr2rp(Width::Word, *regs),
-            0x0F => Self::decompile_movr2ip(Width::Byte, *regs, bytes),
-            0x10 => Self::decompile_movr2ip(Width::Word, *regs, bytes),
-            0x11 => Self::decompile_movrp2r(Width::Byte, *regs),
-            0x12 => Self::decompile_movrp2r(Width::Word, *regs),
-            0x13 => Self::decompile_movrp2rp(*regs),
-            0x14 => Self::decompile_movrp2ip(*regs, bytes),
+            0x0B => Self::decompile_movr2r(Width::Byte, bytes),
+            0x0C => Self::decompile_movr2r(Width::Word, bytes),
+            0x0D => Self::decompile_movr2rp(Width::Byte, bytes),
+            0x0E => Self::decompile_movr2rp(Width::Word, bytes),
+            0x0F => Self::decompile_movr2ip(Width::Byte, bytes),
+            0x10 => Self::decompile_movr2ip(Width::Word, bytes),
+            0x11 => Self::decompile_movrp2r(Width::Byte, bytes),
+            0x12 => Self::decompile_movrp2r(Width::Word, bytes),
+            0x13 => Self::decompile_movrp2rp(bytes),
+            0x14 => Self::decompile_movrp2ip(bytes),
             _ => Err(Error::NoSuchOpcode(*opcode)),
         }
     }
 
-    fn decompile_movi2r(width : Width, regs : u8, bytes : &[u8]) -> Result<Self> {
-        let Some(value_lower) = bytes.get(2) else { return Err(Error::NoValue(0)) };
-        let Some(value_higher) = bytes.get(3) else { return Err(Error::NoValue(1)) };
-        let value = (*value_lower as u64) | ((*value_higher as u64) << 8);
-        let value = Immediate::new(width, value)?;
-        let dest = Register::from_dest(width, regs);
+    fn decompile_movi2r(width : Width, bytes : &[u8]) -> Result<Self> {
+        let value = get_imm!(src, width, bytes)?;
+        let (_, dest) = get_regs!(width, bytes)?;
         Instruction::movi2r(value, dest)
     }
 
-    fn decompile_movi2rp(width : Width, regs : u8, bytes : &[u8]) -> Result<Self> {
-        let Some(value_lower) = bytes.get(2) else { return Err(Error::NoValue(0)) };
-        let Some(value_higher) = bytes.get(3) else { return Err(Error::NoValue(1)) };
-        let value = (*value_lower as u64) | ((*value_higher as u64) << 8);
-        let value = Immediate::new(width, value)?;
-        let dest = Register::from_dest(Width::Word, regs);
+    fn decompile_movi2rp(width : Width, bytes : &[u8]) -> Result<Self> {
+        let value = get_imm!(src, width, bytes)?;
+        let (_, dest) = get_regs!(Width::Word, bytes)?;
         Instruction::movi2rp(value, dest)
     }
 
     fn decompile_movi2ip(width : Width, bytes : &[u8]) -> Result<Self> {
-        let Some(value_lower) = bytes.get(2) else { return Err(Error::NoValue(0)) };
-        let Some(value_higher) = bytes.get(3) else { return Err(Error::NoValue(1)) };
-        let value = (*value_lower as u64) | ((*value_higher as u64) << 8);
-        let value = Immediate::new(width, value)?;
-
-        let Some(dest_lower) = bytes.get(4) else { return Err(Error::NoValue(0)) };
-        let Some(dest_higher) = bytes.get(5) else { return Err(Error::NoValue(1)) };
-        let dest = (*dest_lower as u64) | ((*dest_higher as u64) << 8);
-        let dest = Immediate::new(Width::Word, dest)?;
+        let value = get_imm!(src, width, bytes)?;
+        let dest = get_imm!(dest, Width::Word, bytes)?;
         Instruction::movi2ip(value, dest)
     }
 
-    fn decompile_movip2r(width : Width, regs : u8, bytes : &[u8]) -> Result<Self> {
-        let Some(value_lower) = bytes.get(2) else { return Err(Error::NoValue(0)) };
-        let Some(value_higher) = bytes.get(3) else { return Err(Error::NoValue(1)) };
-        let value = (*value_lower as u64) | ((*value_higher as u64) << 8);
-        let value = Immediate::new(Width::Word, value)?;
-        let dest = Register::from_dest(width, regs);
-        Instruction::movip2r(value, dest)
+    fn decompile_movip2r(width : Width, bytes : &[u8]) -> Result<Self> {
+        let src = get_imm!(src, Width::Word, bytes)?;
+        let (_, dest) = get_regs!(width, bytes)?;
+        Instruction::movip2r(src, dest)
     }
 
-    fn decompile_movip2rp(regs : u8, bytes : &[u8]) -> Result<Self> {
-        let Some(value_lower) = bytes.get(2) else { return Err(Error::NoValue(0)) };
-        let Some(value_higher) = bytes.get(3) else { return Err(Error::NoValue(1)) };
-        let value = (*value_lower as u64) | ((*value_higher as u64) << 8);
-        let value = Immediate::new(Width::Word, value)?;
-        let dest = Register::from_dest(Width::Word, regs);
-        Instruction::movip2rp(value, dest)
+    fn decompile_movip2rp(bytes : &[u8]) -> Result<Self> {
+        let src = get_imm!(src, Width::Word, bytes)?;
+        let (_, dest) = get_regs!(Width::Word, bytes)?;
+        Instruction::movip2rp(src, dest)
     }
 
     fn decompile_movip2ip(bytes : &[u8]) -> Result<Self> {
-        let Some(value_lower) = bytes.get(2) else { return Err(Error::NoValue(0)) };
-        let Some(value_higher) = bytes.get(3) else { return Err(Error::NoValue(1)) };
-        let value = (*value_lower as u64) | ((*value_higher as u64) << 8);
-        let value = Immediate::new(Width::Word, value)?;
-
-        let Some(dest_lower) = bytes.get(4) else { return Err(Error::NoValue(0)) };
-        let Some(dest_higher) = bytes.get(5) else { return Err(Error::NoValue(1)) };
-        let dest = (*dest_lower as u64) | ((*dest_higher as u64) << 8);
-        let dest = Immediate::new(Width::Word, dest)?;
-        Instruction::movip2ip(value, dest)
+        let src = get_imm!(src, Width::Word, bytes)?;
+        let dest = get_imm!(dest, Width::Word, bytes)?;
+        Instruction::movip2ip(src, dest)
     }
 
-    fn decompile_movr2r(width : Width, regs : u8) -> Result<Self> {
-        let src = Register::from_src(width, regs);
-        let dest = Register::from_dest(width, regs);
+    fn decompile_movr2r(width : Width, bytes : &[u8]) -> Result<Self> {
+        let (src, dest) = get_regs!(width, bytes)?;
         Instruction::movr2r(src, dest)
     }
 
-    fn decompile_movr2rp(width : Width, regs : u8) -> Result<Self> {
-        let src = Register::from_src(width, regs);
-        let dest = Register::from_dest(Width::Word, regs);
+    fn decompile_movr2rp(width : Width, bytes : &[u8]) -> Result<Self> {
+        let (src, dest) = get_regs!(width, Width::Word, bytes)?;
         Instruction::movr2rp(src, dest)
     }
 
-    fn decompile_movr2ip(width : Width, regs : u8, bytes : &[u8]) -> Result<Self> {
-        let src = Register::from_src(width, regs);
-        let Some(value_lower) = bytes.get(2) else { return Err(Error::NoValue(0)) };
-        let Some(value_higher) = bytes.get(3) else { return Err(Error::NoValue(1)) };
-        let value = (*value_lower as u64) | ((*value_higher as u64) << 8);
-        let dest = Immediate::new(Width::Word, value)?;
+    fn decompile_movr2ip(width : Width, bytes : &[u8]) -> Result<Self> {
+        let (src, _) = get_regs!(width, bytes)?;
+        let dest = get_imm!(src, Width::Word, bytes)?;
 
         Instruction::movr2ip(src, dest)
     }
 
-    fn decompile_movrp2r(width : Width, regs : u8) -> Result<Self> {
-        let src = Register::from_src(Width::Word, regs);
-        let dest = Register::from_dest(width, regs);
+    fn decompile_movrp2r(width : Width, bytes : &[u8]) -> Result<Self> {
+        let (src, dest) = get_regs!(Width::Word, width, bytes)?;
         Instruction::movrp2r(src, dest)
     }
 
-    fn decompile_movrp2rp(regs : u8) -> Result<Self> {
-        let src = Register::from_src(Width::Word, regs);
-        let dest = Register::from_dest(Width::Word, regs);
+    fn decompile_movrp2rp(bytes : &[u8]) -> Result<Self> {
+        let (src, dest) = get_regs!(Width::Word, bytes)?;
         Instruction::movrp2rp(src, dest)
     }
 
-    fn decompile_movrp2ip(regs : u8, bytes : &[u8]) -> Result<Self> {
-        let src = Register::from_src(Width::Word, regs);
-        let Some(value_lower) = bytes.get(2) else { return Err(Error::NoValue(0)) };
-        let Some(value_higher) = bytes.get(3) else { return Err(Error::NoValue(1)) };
-        let value = (*value_lower as u64) | ((*value_higher as u64) << 8);
-        let dest = Immediate::new(Width::Word, value)?;
-
+    fn decompile_movrp2ip(bytes : &[u8]) -> Result<Self> {
+        let (src, _) = get_regs!(Width::Word, bytes)?;
+        let dest = get_imm!(src, Width::Word, bytes)?;
         Instruction::movrp2ip(src, dest)
     }
 }
