@@ -1,8 +1,49 @@
 #[allow(unused_imports)]
 use common::prelude::*;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RegisterValue(u64);
+
+impl RegisterValue {
+    pub fn set_byte(&mut self, idx : u8, value : u8) {
+        self.0 &= !(0xFF << (idx * 8)); // Set this byte to 0
+        self.0 |= ((value as u64) << (idx * 8)); // Set the value
+    }
+
+    pub fn set_word(&mut self, idx : u8, value : u16) {
+        self.0 &= !(0xFFFF << (idx * 16)); // Set this word to 0
+        self.0 |= ((value as u64) << (idx * 16)); // Set the value
+    }
+
+    pub fn get_byte(&self, idx : u8) -> u8 {
+        (self.0 >> (idx * 8)) as u8
+    }
+
+    pub fn get_word(&self, idx : u8) -> u16 {
+        (self.0 >> (idx * 16)) as u16
+    }
+}
+
+impl PartialEq<u64> for RegisterValue {
+    fn eq(&self, other: &u64) -> bool {
+        self.0 == *other
+    }
+}
+
+impl From<u64> for RegisterValue {
+    fn from(value: u64) -> Self {
+        Self(value)
+    }
+}
+
+impl Into<u64> for RegisterValue {
+    fn into(self) -> u64 {
+        self.0
+    }
+}
+
 pub struct VM {
-    regs : [u64; 16],
+    regs : [RegisterValue; 16],
     rom : Vec<u8>,
     ram : Vec<u8>,
 }
@@ -10,7 +51,7 @@ pub struct VM {
 impl VM {
     pub fn new(rom : Vec<u8>, ram_size : usize) -> Self {
         Self {
-            regs: [0; 16],
+            regs: [RegisterValue(0); 16],
             rom,
             ram: vec![0; ram_size],
         }
@@ -42,6 +83,7 @@ impl VM {
             MovI2R(value, dest) => self.set_reg(dest, value),
             MovI2RP(value, dest) => self.set_mem(self.get_reg(dest).get_word(0), value),
             MovI2IP(value, dest) => self.set_mem(dest.get_word(0), value),
+            MovR2R(src, dest) => self.set_reg(dest, &self.get_reg(src)),
 
             _ => todo!("{instr:?}"),
         };
@@ -49,16 +91,20 @@ impl VM {
     }
 
     pub fn set_reg(&mut self, reg : &Register, value : &Immediate) {
-        self.set_reg_value(reg, value.get_value())
+        let reg = &mut self.regs[reg.as_src() as usize];
+        match value.width() {
+            Width::Byte => reg.set_byte(0, value.get_byte(0)),
+            Width::Word => reg.set_word(0, value.get_word(0)),
+        };
     }
 
     pub fn set_reg_value(&mut self, reg : &Register, value : u64) {
-        self.regs[reg.as_src() as usize] = value
+        self.regs[reg.as_src() as usize] = value.into()
     }
     
     pub fn get_reg(&self, reg : &Register) -> Immediate {
         let value = self.regs[reg.as_src() as usize];
-        Immediate::new_unchecked(reg.width(), value)
+        Immediate::new_unchecked(reg.width(), value.into())
     }
 
     pub fn set_mem(&mut self, addr : u16, value : &Immediate) {
@@ -150,4 +196,14 @@ mod test {
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x0C, 0],
         [(0xF335, 0x0D), (0xF336, 0x60), (0xF337, 0x60)]
     );
+    case!(movr2r, [
+        Instruction::movi2r(Immediate::byte(0x60), Register::rb0()),
+        Instruction::movi2r(Immediate::word(0x600D), Register::r1()),
+        Instruction::movi2r(Immediate::word(0xF337), Register::r2()),
+        Instruction::movi2r(Immediate::word(0xB007), Register::r3()),
+        Instruction::movr2r(Register::rb0(), Register::rb0()),
+        Instruction::movr2r(Register::r1(), Register::r1()),
+        Instruction::movr2r(Register::rb0(), Register::rb2()),
+        Instruction::movr2r(Register::r1(), Register::r3()),
+    ], 8, [0x60, 0x600D, 0xF360, 0x600D, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x18, 0]);
 }
