@@ -41,6 +41,7 @@ impl VM {
             Nop => (),
             MovI2R(value, dest) => self.set_reg(dest, value),
             MovI2RP(value, dest) => self.set_mem(self.get_reg(dest).get_word(0), value),
+            MovI2IP(value, dest) => self.set_mem(dest.get_word(0), value),
 
             _ => todo!("{instr:?}"),
         };
@@ -138,5 +139,15 @@ mod test {
         4,
         [0x8000, 0x8002, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x10, 0],
         [(0x8000, 0x60), (0x8001, 0x00), (0x8002, 0x0D), (0x8003, 0x60)]
+    );
+    case!(
+        movi2ip,
+        [
+            Instruction::movi2ip(Immediate::byte(0x60), Immediate::word(0xF337)),
+            Instruction::movi2ip(Immediate::word(0x600D), Immediate::word(0xF335)),
+        ],
+        2,
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x0C, 0],
+        [(0xF335, 0x0D), (0xF336, 0x60), (0xF337, 0x60)]
     );
 }
