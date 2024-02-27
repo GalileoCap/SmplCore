@@ -25,6 +25,7 @@ impl Width {
         }
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> u8 {
         use Width::*;
         match self {

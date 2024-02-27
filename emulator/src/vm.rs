@@ -7,12 +7,12 @@ pub struct RegisterValue(u64);
 impl RegisterValue {
     pub fn set_byte(&mut self, idx : u8, value : u8) {
         self.0 &= !(0xFF << (idx * 8)); // Set this byte to 0
-        self.0 |= ((value as u64) << (idx * 8)); // Set the value
+        self.0 |= (value as u64) << (idx * 8); // Set the value
     }
 
     pub fn set_word(&mut self, idx : u8, value : u16) {
         self.0 &= !(0xFFFF << (idx * 16)); // Set this word to 0
-        self.0 |= ((value as u64) << (idx * 16)); // Set the value
+        self.0 |= (value as u64) << (idx * 16); // Set the value
     }
 
     pub fn get_byte(&self, idx : u8) -> u8 {
@@ -30,9 +30,9 @@ impl From<u64> for RegisterValue {
     }
 }
 
-impl Into<u64> for RegisterValue {
-    fn into(self) -> u64 {
-        self.0
+impl From<RegisterValue> for u64 {
+    fn from(value: RegisterValue) -> Self {
+        value.0
     }
 }
 
@@ -147,6 +147,7 @@ impl VM {
         } else if addr < 0x8000 {
             todo!("IO")
         } else {
+            #[allow(clippy::collapsible_else_if)]
             if let Some(b) = self.ram.get_mut((addr - 0x8000) as usize) {
                 *b = value;
             }

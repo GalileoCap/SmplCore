@@ -34,6 +34,7 @@ macro_rules! get_imm {
 
 impl Instruction {
     pub fn decompile(bytes : &[u8]) -> Result<Self> {
+        #[allow(clippy::get_first)]
         let opcode = bytes.get(0).ok_or(Error::NoOpcode)?;
         match opcode {
             // TODO: Mix with Instruction::opcode() to update both at the same time
