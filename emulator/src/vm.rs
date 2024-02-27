@@ -79,6 +79,7 @@ impl VM {
             MovI2IP(value, dest) => self.set_mem(dest.get_word(0), value),
             MovR2R(src, dest) => self.set_reg(dest, &self.get_reg(src)),
             MovR2RP(src, dest) => self.set_mem(self.get_reg(dest).get_word(0), &self.get_reg(src)),
+            MovR2IP(src, dest) => self.set_mem(dest.get_word(0), &self.get_reg(src)),
 
             _ => todo!("{instr:?}"),
         };
@@ -211,6 +212,16 @@ mod test {
         ],
         5,
         [0x600D, 0xF337, 0xF338, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x10, 0],
+        [(0xF337, 0x0D), (0xF338, 0x0D), (0xF339, 0x60)]
+    );
+    case!(
+        movr2ip, [
+            Instruction::movi2r(Immediate::word(0x600D), Register::r0()),
+            Instruction::movr2ip(Register::rb0(), Immediate::word(0xF337)),
+            Instruction::movr2ip(Register::r0(), Immediate::word(0xF338)),
+        ],
+        3,
+        [0x600D, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xC, 0],
         [(0xF337, 0x0D), (0xF338, 0x0D), (0xF339, 0x60)]
     );
 }
