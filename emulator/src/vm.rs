@@ -77,6 +77,19 @@ impl VM {
             MovI2R(value, dest) => self.set_reg(dest, value),
             MovI2RP(value, dest) => self.set_mem(self.get_reg(dest).get_word(0), value),
             MovI2IP(value, dest) => self.set_mem(dest.get_word(0), value),
+            MovIP2R(src, dest) => {
+                let value = self.get_mem(src.get_word(0), dest.width());
+                self.set_reg(dest, &value)
+            },
+            MovIP2RP(src, dest) => {
+                let value = self.get_mem(src.get_word(0), Width::Byte);
+                self.set_mem(self.get_reg(dest).get_word(0), &value)
+            },
+            MovIP2IP(src, dest) => {
+                let value = self.get_mem(src.get_word(0), Width::Byte);
+                let addr = self.get_mem(dest.get_word(0), dest.width()).get_word(0);
+                self.set_mem(addr, &value)
+            },
             MovR2R(src, dest) => self.set_reg(dest, &self.get_reg(src)),
             MovR2RP(src, dest) => self.set_mem(self.get_reg(dest).get_word(0), &self.get_reg(src)),
             MovR2IP(src, dest) => self.set_mem(dest.get_word(0), &self.get_reg(src)),
@@ -114,14 +127,27 @@ impl VM {
 
     pub fn set_mem_byte(&mut self, addr : u16, value : u8) {
         if addr < 0x6000 {
-            self.rom[addr as usize] = value
+            if let Some(b) = self.rom.get_mut(addr as usize) {
+                *b = value;
+            }
         } else if addr < 0x7800 {
             todo!("Display")
         } else if addr < 0x8000 {
             todo!("IO")
         } else {
-            self.ram[(addr - 0x8000) as usize] = value
+            if let Some(b) = self.ram.get_mut((addr - 0x8000) as usize) {
+                *b = value;
+            }
         }
+    }
+
+    pub fn get_mem(&mut self, addr : u16, width : Width) -> Immediate {
+        let mut value = 0;
+        for idx in 0..2 {
+            let byte = self.get_mem_byte(addr.wrapping_add(idx));
+            value |= (byte as u64) << (8 * idx);
+        }
+        Immediate::new_unchecked(width, value)
     }
 
     pub fn get_mem_byte(&self, addr : u16) -> u8 {
@@ -191,6 +217,30 @@ mod test {
         2,
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x0C, 0],
         [(0xF335, 0x0D), (0xF336, 0x60), (0xF337, 0x60)]
+    );
+    case!(movip2r, [
+        Instruction::movi2ip(Immediate::word(0x600D), Immediate::word(0xF337)),
+        Instruction::movip2r(Immediate::word(0xF337), Register::rb0()),
+        Instruction::movip2r(Immediate::word(0xF337), Register::r1()),
+    ], 3, [0x0D, 0x600D, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xE, 0]);
+    case!(
+        movip2rp, [
+            Instruction::movi2ip(Immediate::word(0x600D), Immediate::word(0xF337)),
+            Instruction::movi2r(Immediate::word(0xF338), Register::r0()),
+            Instruction::movip2rp(Immediate::word(0xF337), Register::r0()),
+        ],
+        3,
+        [0xF338, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xE, 0],
+        [(0xF337, 0x0D), (0xF338, 0x0D)]
+    );
+    case!(
+        movip2ip, [
+            Instruction::movi2ip(Immediate::word(0x600D), Immediate::word(0xF337)),
+            Instruction::movip2ip(Immediate::word(0xF337), Immediate::word(0xF338)),
+        ],
+        2,
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xC, 0],
+        [(0xF337, 0x0D), (0xF338, 0x60)]
     );
     case!(movr2r, [
         Instruction::movi2r(Immediate::byte(0x60), Register::rb0()),
