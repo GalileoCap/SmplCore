@@ -12,3 +12,4 @@ name = "sasm"
 [dependencies]
 clap = { version = "4.5.1", features = ["derive"] }
 common = { path = "../common" }
+parser = { path = "../parser" }

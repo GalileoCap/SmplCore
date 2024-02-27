@@ -1,6 +1,7 @@
 #[allow(unused_imports)]
 use common::{prelude::*, ParamIdx};
-use crate::{CompileContext, GroupDelim, Token};
+use crate::CompileContext;
+use parser::{Token, GroupDelim};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {

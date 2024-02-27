@@ -1,6 +1,7 @@
 #[allow(unused_imports)]
 use common::prelude::*;
-use crate::{tokenize, Token, Expr, Scanner};
+use crate::Expr;
+use parser::{tokenize, Token, Scanner};
 
 fn parse_two_params(cb : impl FnOnce(Token, Token) -> Expr, toks : &mut Scanner<Token>, ctx : String) -> Result<Expr> {
     let Some(t1) = toks.pop() else { return Err(Error::MissingToken(ctx)) };
