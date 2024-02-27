@@ -38,11 +38,13 @@ impl VM {
     pub fn execute(&mut self, instr : &Instruction) -> Result<()> {
         use Instruction::*;
         match instr {
-            Nop => Ok(()),
-            MovI2R(value, dest) => Ok(self.set_reg(dest, value)),
+            Nop => (),
+            MovI2R(value, dest) => self.set_reg(dest, value),
+            MovI2RP(value, dest) => self.set_mem(self.get_reg(dest).get_word(0), value),
 
             _ => todo!("{instr:?}"),
-        }
+        };
+        Ok(())
     }
 
     pub fn set_reg(&mut self, reg : &Register, value : &Immediate) {
@@ -67,7 +69,7 @@ impl VM {
         }
     }
 
-    fn set_mem_byte(&mut self, addr : u16, value : u8) {
+    pub fn set_mem_byte(&mut self, addr : u16, value : u8) {
         if addr < 0x6000 {
             self.rom[addr as usize] = value
         } else if addr < 0x7800 {
@@ -75,7 +77,7 @@ impl VM {
         } else if addr < 0x8000 {
             todo!("IO")
         } else {
-            self.ram[addr as usize] = value
+            self.ram[(addr - 0x8000) as usize] = value
         }
     }
 
@@ -87,7 +89,7 @@ impl VM {
         } else if addr < 0x8000 {
             todo!("IO")
         } else {
-            self.ram.get(addr as usize).map_or(0, |b| *b)
+            self.ram.get((addr - 0x8000) as usize).map_or(0, |b| *b)
         }
     }
 }
@@ -97,7 +99,7 @@ mod test {
     use super::*;
 
     macro_rules! case {
-        ($ident:ident, $code:expr, $reps:literal, $regs:expr) => {
+        ($ident:ident, $code:expr, $reps:literal, $regs:expr, $mem:expr) => {
             #[test]
             fn $ident() {
                 let rom = $code.into_iter().flat_map(|instr| instr.unwrap().compile()).collect();
@@ -109,7 +111,14 @@ mod test {
                 }
 
                 assert_eq!(vm.regs, $regs);
+                for (addr, value) in $mem.into_iter() {
+                    assert_eq!(vm.get_mem_byte(addr), value, "at {addr:#06X}");
+                }
             }
+        };
+
+        ($ident:ident, $code:expr, $reps:literal, $regs:expr) => {
+            case!($ident, $code, $reps, $regs, []);
         };
     }
 
@@ -118,4 +127,16 @@ mod test {
         Instruction::movi2r(Immediate::byte(0x60), Register::rb0()),
         Instruction::movi2r(Immediate::word(0x600D), Register::r1()),
     ], 2, [0x60, 0x600D, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x08, 0]);
+    case!(
+        movi2rp,
+        [
+            Instruction::movi2r(Immediate::word(0x8000), Register::r0()),
+            Instruction::movi2r(Immediate::word(0x8002), Register::r1()),
+            Instruction::movi2rp(Immediate::byte(0x60), Register::r0()),
+            Instruction::movi2rp(Immediate::word(0x600D), Register::r1()),
+        ],
+        4,
+        [0x8000, 0x8002, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x10, 0],
+        [(0x8000, 0x60), (0x8001, 0x00), (0x8002, 0x0D), (0x8003, 0x60)]
+    );
 }
