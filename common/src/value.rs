@@ -24,6 +24,14 @@ impl Width {
             Word => <u64 as TryInto<u16>>::try_into(value).is_ok(),
         }
     }
+
+    pub fn len(&self) -> u8 {
+        use Width::*;
+        match self {
+            Byte => 1,
+            Word => 2,
+        }
+    } 
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

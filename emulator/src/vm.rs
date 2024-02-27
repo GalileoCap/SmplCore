@@ -93,8 +93,20 @@ impl VM {
             MovR2R(src, dest) => self.set_reg(dest, &self.get_reg(src)),
             MovR2RP(src, dest) => self.set_mem(self.get_reg(dest).get_word(0), &self.get_reg(src)),
             MovR2IP(src, dest) => self.set_mem(dest.get_word(0), &self.get_reg(src)),
-
-            _ => todo!("{instr:?}"),
+            MovRP2R(src, dest) => {
+                let value = self.get_mem(self.get_reg(src).get_word(0), dest.width());
+                self.set_reg(dest, &value)
+            },
+            MovRP2RP(src, dest) => {
+                let value = self.get_mem(self.get_reg(src).get_word(0), Width::Byte);
+                self.set_mem(self.get_reg(dest).get_word(0), &value)
+            },
+            MovRP2IP(src, dest) => {
+                let value = self.get_mem(self.get_reg(src).get_word(0), Width::Byte);
+                let addr = self.get_mem(dest.get_word(0), Width::Word).get_word(0);
+                dbg!(src, dest, value, addr);
+                self.set_mem(addr, &value)
+            },
         };
         Ok(())
     }
@@ -143,8 +155,8 @@ impl VM {
 
     pub fn get_mem(&mut self, addr : u16, width : Width) -> Immediate {
         let mut value = 0;
-        for idx in 0..2 {
-            let byte = self.get_mem_byte(addr.wrapping_add(idx));
+        for idx in 0..width.len() {
+            let byte = self.get_mem_byte(addr.wrapping_add(idx as u16));
             value |= (byte as u64) << (8 * idx);
         }
         Immediate::new_unchecked(width, value)
@@ -273,5 +285,40 @@ mod test {
         3,
         [0x600D, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xC, 0],
         [(0xF337, 0x0D), (0xF338, 0x0D), (0xF339, 0x60)]
+    );
+    case!(
+        movrp2r,
+        [
+            Instruction::movi2r(Immediate::word(0xF337), Register::r0()),
+            Instruction::movi2ip(Immediate::word(0x600D), Immediate::word(0xF337)),
+            Instruction::movrp2r(Register::r0(), Register::rb1()),
+            Instruction::movrp2r(Register::r0(), Register::r2()),
+        ],
+        4,
+        [0xF337, 0x0D, 0x600D, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xE, 0],
+        [(0xF337, 0x0D), (0xF338, 0x60)]
+    );
+    case!(
+        movrp2rp,
+        [
+            Instruction::movi2r(Immediate::word(0xF337), Register::r0()),
+            Instruction::movi2r(Immediate::word(0xF339), Register::r1()),
+            Instruction::movi2ip(Immediate::word(0x600D), Immediate::word(0xF337)),
+            Instruction::movrp2rp(Register::r0(), Register::r1()),
+        ],
+        4,
+        [0xF337, 0xF339, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x10, 0],
+        [(0xF337, 0x0D), (0xF338, 0x60), (0xF339, 0x0D), (0xF33A, 0)]
+    );
+    case!(
+        movrp2ip,
+        [
+            Instruction::movi2r(Immediate::word(0xF337), Register::r0()),
+            Instruction::movi2ip(Immediate::word(0xF339), Immediate::word(0xF337)),
+            Instruction::movrp2ip(Register::r0(), Immediate::word(0xF337)),
+        ],
+        3,
+        [0xF337, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x0E, 0],
+        [(0xF337, 0x39), (0xF338, 0xF3), (0xF339, 0x39), (0xF33A, 0)]
     );
 }
