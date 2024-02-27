@@ -49,13 +49,13 @@ impl Register {
         match width {
             Width::Byte => match byte & 0x0F {
                 0 => Rb0,
-                1 => Rb0,
+                1 => Rb1,
                 _ => todo!(),
             },
 
             Width::Word => match byte & 0x0F {
                 0 => R0,
-                1 => R0,
+                1 => R1,
                 _ => todo!(),
             },
         }
