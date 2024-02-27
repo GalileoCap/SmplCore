@@ -94,13 +94,13 @@ mod test {
     test_case!(nop, [0x00, 0x00]);
     test_case!(
         movi2r,
-        Immediate::byte(0x60), Register::Rb0, [0x01, 0x00, 0x60, 0x00];
-        Immediate::word(0x600D), Register::R0, [0x02, 0x00, 0x0D, 0x60]
+        Immediate::byte(0x60), Register::rb0(), [0x01, 0x00, 0x60, 0x00];
+        Immediate::word(0x600D), Register::r0(), [0x02, 0x00, 0x0D, 0x60]
     );
     test_case!(
         movi2rp,
-        Immediate::byte(0x60), Register::R0, [0x03, 0x00, 0x60, 0x00];
-        Immediate::word(0x600D), Register::R0, [0x04, 0x00, 0x0D, 0x60]
+        Immediate::byte(0x60), Register::r0(), [0x03, 0x00, 0x60, 0x00];
+        Immediate::word(0x600D), Register::r0(), [0x04, 0x00, 0x0D, 0x60]
     );
     test_case!(
         movi2ip,
@@ -109,12 +109,12 @@ mod test {
     );
     test_case!(
         movip2r,
-        Immediate::word(0x600D), Register::Rb0, [0x07, 0x00, 0x0D, 0x60];
-        Immediate::word(0x600D), Register::R0, [0x08, 0x00, 0x0D, 0x60]
+        Immediate::word(0x600D), Register::rb0(), [0x07, 0x00, 0x0D, 0x60];
+        Immediate::word(0x600D), Register::r0(), [0x08, 0x00, 0x0D, 0x60]
     );
     test_case!(
         movip2rp,
-        Immediate::word(0x600D), Register::R0, [0x09, 0x00, 0x0D, 0x60]
+        Immediate::word(0x600D), Register::r0(), [0x09, 0x00, 0x0D, 0x60]
     );
     test_case!(
         movip2ip,
@@ -122,30 +122,30 @@ mod test {
     );
     test_case!(
         movr2r,
-        Register::Rb0, Register::Rb1, [0x0B, 0x10];
-        Register::R0, Register::R1, [0x0C, 0x10]
+        Register::rb0(), Register::rb1(), [0x0B, 0x10];
+        Register::r0(), Register::r1(), [0x0C, 0x10]
     );
     test_case!(
         movr2rp,
-        Register::Rb0, Register::R1, [0x0D, 0x10];
-        Register::R0, Register::R1, [0x0E, 0x10]
+        Register::rb0(), Register::r1(), [0x0D, 0x10];
+        Register::r0(), Register::r1(), [0x0E, 0x10]
     );
     test_case!(
         movr2ip,
-        Register::Rb0, Immediate::word(0x600D), [0x0F, 0x00, 0x0D, 0x60];
-        Register::R0, Immediate::word(0x600D), [0x10, 0x00, 0x0D, 0x60]
+        Register::rb0(), Immediate::word(0x600D), [0x0F, 0x00, 0x0D, 0x60];
+        Register::r0(), Immediate::word(0x600D), [0x10, 0x00, 0x0D, 0x60]
     );
     test_case!(
         movrp2r,
-        Register::R0, Register::Rb1, [0x11, 0x10];
-        Register::R0, Register::R1, [0x12, 0x10]
+        Register::r0(), Register::rb1(), [0x11, 0x10];
+        Register::r0(), Register::r1(), [0x12, 0x10]
     );
     test_case!(
         movrp2rp,
-        Register::R0, Register::R1, [0x13, 0x10]
+        Register::r0(), Register::r1(), [0x13, 0x10]
     );
     test_case!(
         movrp2ip,
-        Register::R0, Immediate::word(0x600D), [0x14, 0x00, 0x0D, 0x60]
+        Register::r0(), Immediate::word(0x600D), [0x14, 0x00, 0x0D, 0x60]
     );
 }

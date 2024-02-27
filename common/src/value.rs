@@ -28,36 +28,85 @@ impl Width {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Register {
-    R0, R1,
-    Rb0, Rb1,
+    RINFO,
+    RIP,
+    Flags,
+    RSH,
+    RSB,
+    R(Width, u8),
 }
 
 impl Register {
+    pub fn rinfo() -> Self { Self::RINFO }
+    pub fn rip() -> Self { Self::RIP }
+    pub fn flags() -> Self { Self::Flags }
+    pub fn rsh() -> Self { Self::RSH }
+    pub fn rsb() -> Self { Self::RSB }
+    fn r(width : Width, idx : u8) -> Self { Self::R(width, idx) }
+    pub fn rb0() -> Self { Self::r(Width::Byte, 0) }
+    pub fn r0() -> Self { Self::r(Width::Word, 0) }
+    pub fn r1() -> Self { Self::r(Width::Word, 1) }
+    pub fn rb1() -> Self { Self::r(Width::Byte, 1) }
+    pub fn r2() -> Self { Self::r(Width::Word, 2) }
+    pub fn rb2() -> Self { Self::r(Width::Byte, 2) }
+    pub fn r3() -> Self { Self::r(Width::Word, 3) }
+    pub fn rb3() -> Self { Self::r(Width::Byte, 3) }
+    pub fn r4() -> Self { Self::r(Width::Word, 4) }
+    pub fn rb4() -> Self { Self::r(Width::Byte, 4) }
+    pub fn r5() -> Self { Self::r(Width::Word, 5) }
+    pub fn rb5() -> Self { Self::r(Width::Byte, 5) }
+    pub fn r6() -> Self { Self::r(Width::Word, 6) }
+    pub fn rb6() -> Self { Self::r(Width::Byte, 6) }
+    pub fn r7() -> Self { Self::r(Width::Word, 7) }
+    pub fn rb7() -> Self { Self::r(Width::Byte, 7) }
+    pub fn r8() -> Self { Self::r(Width::Word, 8) }
+    pub fn rb8() -> Self { Self::r(Width::Byte, 8) }
+    pub fn r9() -> Self { Self::r(Width::Word, 9) }
+    pub fn rb9() -> Self { Self::r(Width::Byte, 9) }
+    pub fn r10() -> Self { Self::r(Width::Word, 10) }
+    pub fn rb10() -> Self { Self::r(Width::Byte, 10) }
+
     pub fn from(s : &str) -> Option<Self> {
-        use Register::*;
         match &*s.to_lowercase() {
-            "rb0" => Some(Rb0),
-            "r0" => Some(R0),
-            "rb1" => Some(Rb1),
-            "r1" => Some(R1),
+            "rinfo" => Some(Self::rinfo()),
+            "rip" => Some(Self::rip()),
+            "flags" => Some(Self::flags()),
+            "rsh" => Some(Self::rsh()),
+            "rsb" => Some(Self::rsb()),
+            "rb0" => Some(Self::rb0()),
+            "r0" => Some(Self::r0()),
+            "rb1" => Some(Self::rb1()),
+            "r1" => Some(Self::r1()),
+            "rb2" => Some(Self::rb2()),
+            "r2" => Some(Self::r2()),
+            "rb3" => Some(Self::rb3()),
+            "r3" => Some(Self::r3()),
+            "rb4" => Some(Self::rb4()),
+            "r4" => Some(Self::r4()),
+            "rb5" => Some(Self::rb5()),
+            "r5" => Some(Self::r5()),
+            "rb6" => Some(Self::rb6()),
+            "r6" => Some(Self::r6()),
+            "rb7" => Some(Self::rb7()),
+            "r7" => Some(Self::r7()),
+            "rb8" => Some(Self::rb8()),
+            "r8" => Some(Self::r8()),
+            "rb9" => Some(Self::rb9()),
+            "r9" => Some(Self::r9()),
+            "rb10" => Some(Self::rb10()),
+            "r10" => Some(Self::r10()),
             _ => None,
         }
     }
 
     pub fn from_src(width : Width, byte : u8) -> Self {
-        use Register::*;
-        match width {
-            Width::Byte => match byte & 0x0F {
-                0 => Rb0,
-                1 => Rb1,
-                _ => todo!(),
-            },
-
-            Width::Word => match byte & 0x0F {
-                0 => R0,
-                1 => R1,
-                _ => todo!(),
-            },
+        match byte & 0xF {
+            0xB => Self::rinfo(),
+            0xC => Self::rip(),
+            0xD => Self::flags(),
+            0xE => Self::rsh(),
+            0xF => Self::rsb(),
+            idx => Self::r(width, idx),
         }
     }
 
@@ -68,8 +117,12 @@ impl Register {
     pub fn as_src(&self) -> u8 {
         use Register::*;
         match self {
-            R0 | Rb0 => 0x00,
-            R1 | Rb1 => 0x01,
+            R(_, idx) => *idx,
+            RINFO => 0xB,
+            RIP => 0xC,
+            Flags => 0xD,
+            RSH => 0xE,
+            RSB => 0xF,
         }
     }
     
@@ -87,8 +140,9 @@ impl Value for Register {
     fn width(&self) -> Width {
         use Register::*;
         match self {
-            Rb0 | Rb1 => Width::Byte,
-            R0 | R1 => Width::Word,
+            RINFO | RIP | Flags | RSH | RSB
+                => Width::Word,
+            R(width, _) => *width,
         }
     }
 }

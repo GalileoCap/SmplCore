@@ -74,31 +74,31 @@ mod test {
     #[test]
     fn mov() {
         let cases = vec![
-            ("mov 0x60, rb0", Ok(vec![Instruction::movi2r(Immediate::byte(0x60), Register::Rb0).unwrap()])),
-            ("mov 0x600D, r0", Ok(vec![Instruction::movi2r(Immediate::word(0x600D), Register::R0).unwrap()])),
-            ("nop\nlabel: mov label, r0", Ok(vec![Instruction::nop().unwrap(), Instruction::movi2r(Immediate::word(0x0002), Register::R0).unwrap()])),
-            ("mov 0x600D, [r0]", Ok(vec![Instruction::movi2rp(Immediate::word(0x600D), Register::R0).unwrap()])),
+            ("mov 0x60, rb0", Ok(vec![Instruction::movi2r(Immediate::byte(0x60), Register::rb0()).unwrap()])),
+            ("mov 0x600D, r0", Ok(vec![Instruction::movi2r(Immediate::word(0x600D), Register::r0()).unwrap()])),
+            ("nop\nlabel: mov label, r0", Ok(vec![Instruction::nop().unwrap(), Instruction::movi2r(Immediate::word(0x0002), Register::r0()).unwrap()])),
+            ("mov 0x600D, [r0]", Ok(vec![Instruction::movi2rp(Immediate::word(0x600D), Register::r0()).unwrap()])),
             ("mov 0x600D, [0xF337]", Ok(vec![Instruction::movi2ip(Immediate::word(0x600D), Immediate::word(0xF337)).unwrap()])),
             ("nop\nlabel: mov 0x600D, [label]", Ok(vec![Instruction::nop().unwrap(), Instruction::movi2ip(Immediate::word(0x600D), Immediate::word(0x0002)).unwrap()])),
 
-            ("mov [0x600D], rb0", Ok(vec![Instruction::movip2r(Immediate::word(0x600D), Register::Rb0).unwrap()])),
-            ("mov [0x600D], r0", Ok(vec![Instruction::movip2r(Immediate::word(0x600D), Register::R0).unwrap()])),
-            ("nop\nlabel: mov [label], r0", Ok(vec![Instruction::nop().unwrap(), Instruction::movip2r(Immediate::word(0x0002), Register::R0).unwrap()])),
-            ("mov [0x600D], [r0]", Ok(vec![Instruction::movip2rp(Immediate::word(0x600D), Register::R0).unwrap()])),
+            ("mov [0x600D], rb0", Ok(vec![Instruction::movip2r(Immediate::word(0x600D), Register::rb0()).unwrap()])),
+            ("mov [0x600D], r0", Ok(vec![Instruction::movip2r(Immediate::word(0x600D), Register::r0()).unwrap()])),
+            ("nop\nlabel: mov [label], r0", Ok(vec![Instruction::nop().unwrap(), Instruction::movip2r(Immediate::word(0x0002), Register::r0()).unwrap()])),
+            ("mov [0x600D], [r0]", Ok(vec![Instruction::movip2rp(Immediate::word(0x600D), Register::r0()).unwrap()])),
             ("mov [0x600D], [0xF337]", Ok(vec![Instruction::movip2ip(Immediate::word(0x600D), Immediate::word(0xF337)).unwrap()])),
             ("nop\nlabel: mov [0x600D], [label]", Ok(vec![Instruction::nop().unwrap(), Instruction::movip2ip(Immediate::word(0x600D), Immediate::word(0x0002)).unwrap()])),
             
-            ("mov rb0, rb1", Ok(vec![Instruction::movr2r(Register::Rb0, Register::Rb1).unwrap()])),
-            ("mov r0, r1", Ok(vec![Instruction::movr2r(Register::R0, Register::R1).unwrap()])),
-            ("mov r0, [r1]", Ok(vec![Instruction::movr2rp(Register::R0, Register::R1).unwrap()])),
-            ("mov r0, [0x600D]", Ok(vec![Instruction::movr2ip(Register::R0, Immediate::word(0x600D)).unwrap()])),
-            ("nop\nlabel: mov r0, [label]", Ok(vec![Instruction::nop().unwrap(), Instruction::movr2ip(Register::R0, Immediate::word(0x0002)).unwrap()])),
+            ("mov rb0, rb1", Ok(vec![Instruction::movr2r(Register::rb0(), Register::rb1()).unwrap()])),
+            ("mov r0, r1", Ok(vec![Instruction::movr2r(Register::r0(), Register::r1()).unwrap()])),
+            ("mov r0, [r1]", Ok(vec![Instruction::movr2rp(Register::r0(), Register::r1()).unwrap()])),
+            ("mov r0, [0x600D]", Ok(vec![Instruction::movr2ip(Register::r0(), Immediate::word(0x600D)).unwrap()])),
+            ("nop\nlabel: mov r0, [label]", Ok(vec![Instruction::nop().unwrap(), Instruction::movr2ip(Register::r0(), Immediate::word(0x0002)).unwrap()])),
 
-            ("mov [r0], rb1", Ok(vec![Instruction::movrp2r(Register::R0, Register::Rb1).unwrap()])),
-            ("mov [r0], r1", Ok(vec![Instruction::movrp2r(Register::R0, Register::R1).unwrap()])),
-            ("mov [r0], [r1]", Ok(vec![Instruction::movrp2rp(Register::R0, Register::R1).unwrap()])),
-            ("mov [r0], [0x600D]", Ok(vec![Instruction::movrp2ip(Register::R0, Immediate::word(0x600D)).unwrap()])),
-            ("nop\nlabel: mov [r0], [label]", Ok(vec![Instruction::nop().unwrap(), Instruction::movrp2ip(Register::R0, Immediate::word(0x0002)).unwrap()])),
+            ("mov [r0], rb1", Ok(vec![Instruction::movrp2r(Register::r0(), Register::rb1()).unwrap()])),
+            ("mov [r0], r1", Ok(vec![Instruction::movrp2r(Register::r0(), Register::r1()).unwrap()])),
+            ("mov [r0], [r1]", Ok(vec![Instruction::movrp2rp(Register::r0(), Register::r1()).unwrap()])),
+            ("mov [r0], [0x600D]", Ok(vec![Instruction::movrp2ip(Register::r0(), Immediate::word(0x600D)).unwrap()])),
+            ("nop\nlabel: mov [r0], [label]", Ok(vec![Instruction::nop().unwrap(), Instruction::movrp2ip(Register::r0(), Immediate::word(0x0002)).unwrap()])),
         ];
 
         for (code, expect) in cases.into_iter() {
