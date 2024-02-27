@@ -24,12 +24,6 @@ impl RegisterValue {
     }
 }
 
-impl PartialEq<u64> for RegisterValue {
-    fn eq(&self, other: &u64) -> bool {
-        self.0 == *other
-    }
-}
-
 impl From<u64> for RegisterValue {
     fn from(value: u64) -> Self {
         Self(value)
@@ -84,6 +78,7 @@ impl VM {
             MovI2RP(value, dest) => self.set_mem(self.get_reg(dest).get_word(0), value),
             MovI2IP(value, dest) => self.set_mem(dest.get_word(0), value),
             MovR2R(src, dest) => self.set_reg(dest, &self.get_reg(src)),
+            MovR2RP(src, dest) => self.set_mem(self.get_reg(dest).get_word(0), &self.get_reg(src)),
 
             _ => todo!("{instr:?}"),
         };
@@ -157,7 +152,7 @@ mod test {
                     vm.execute_next().unwrap();
                 }
 
-                assert_eq!(vm.regs, $regs);
+                assert_eq!(vm.regs.iter().map(|reg| (*reg).into()).collect::<Vec<u64>>(), $regs);
                 for (addr, value) in $mem.into_iter() {
                     assert_eq!(vm.get_mem_byte(addr), value, "at {addr:#06X}");
                 }
@@ -206,4 +201,16 @@ mod test {
         Instruction::movr2r(Register::rb0(), Register::rb2()),
         Instruction::movr2r(Register::r1(), Register::r3()),
     ], 8, [0x60, 0x600D, 0xF360, 0x600D, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x18, 0]);
+    case!(
+        movr2rp, [
+            Instruction::movi2r(Immediate::word(0x600D), Register::r0()),
+            Instruction::movi2r(Immediate::word(0xF337), Register::r1()),
+            Instruction::movi2r(Immediate::word(0xF338), Register::r2()),
+            Instruction::movr2rp(Register::rb0(), Register::r1()),
+            Instruction::movr2rp(Register::r0(), Register::r2()),
+        ],
+        5,
+        [0x600D, 0xF337, 0xF338, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x10, 0],
+        [(0xF337, 0x0D), (0xF338, 0x0D), (0xF339, 0x60)]
+    );
 }
