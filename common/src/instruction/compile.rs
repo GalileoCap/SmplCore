@@ -39,7 +39,7 @@ impl Instruction {
             MovI2RP(value, _) => case!(value, 0x03),
             MovI2IP(value, _) => case!(value, 0x05),
             MovIP2R(_, dest) => case!(dest, 0x07),
-            MovIP2RP(_, _) => 0x09,
+            MovIP2RP(_, _) => 0x09, // TODO: Width of the data being sent?
             MovIP2IP(_, _) => 0x0A,
             MovR2R(src, _) => case!(src, 0x0B),
             MovR2RP(src, _) => case!(src, 0x0D),
